@@ -59,7 +59,7 @@ int main(int argc, char **argv) {
     else graph.loadGraphFromFile(args.getOption("-path"), is_sample, sample_rate);
     graph.removeMultiEdges(graph);
 //    graph.subgraph_density_upper_bound = 1e20;
-//    printf("io finished.\n");
+    printf("io finished.\n");
     auto begin = std::chrono::steady_clock::now();
     graph.init();
     if(is_sample) graph.sample(sample_rate);
@@ -154,7 +154,9 @@ int main(int argc, char **argv) {
                 double r = graph.subgraph_density_upper_bound;
                 FlowNetwork flow;
                 WCore w_core;
-                LinearProgramming lp(is_directed, 0, 0, 0, order_type);
+                int lp_type= alloc_type == "fista"? 1: 0;
+                //LinearProgramming lp(is_directed, 0, 0, 0, order_type);
+                LinearProgramming lp(is_directed, lp_type, 0, 0, order_type);
                 std::vector<std::pair<VertexID, VertexID>> edges;
                 std::vector<std::vector<VertexID>> vertices(2);
                 std::vector<Heap> heap;
@@ -165,7 +167,7 @@ int main(int argc, char **argv) {
                 subgraph.subgraph_density = graph.subgraph_density;
 
                 while (flag) {
-                    if (!is_reduced || alloc_type != "fw") {
+                    if (!is_reduced || (alloc_type != "fw" && alloc_type != "fista")) {
                         is_reduced = true;
                         if (red_type == "exact-xy-core") {
                             red.xyCoreReduction(graph, subgraph, ratio, l, r, is_init_red,
@@ -184,7 +186,7 @@ int main(int argc, char **argv) {
                             total_vertices_num += subgraph.getVerticesCount();
                             total_edges_num += subgraph.getEdgesCount();
                         }
-//                        printf("subgraph edges: %d\n", subgraph.getEdgesCount());
+                        printf("subgraph edges: %d\n", subgraph.getEdgesCount());
                         if (subgraph.getEdgesCount() == 0) {
                             double c;
                             if (is_map) {
@@ -208,14 +210,14 @@ int main(int argc, char **argv) {
                         }
 
                     }
-                    if (is_mul && alloc_type == "fw" && subgraph.subgraph_density < graph.subgraph_density) {
+                    if (is_mul && (alloc_type == "fw"||alloc_type=="fista") && subgraph.subgraph_density < graph.subgraph_density) {
                         subgraph.subgraph_density = graph.subgraph_density;
-//                        printf("edges #: %d\n", subgraph.getEdgesCount());
+                        printf("edges #: %d\n", subgraph.getEdgesCount());
                         is_init_red = false;
                         red.xyCoreReduction(subgraph, subgraph, ratio, subgraph.subgraph_density, r, is_init_red, is_dc, is_map, false, false, is_res, res_width, true);
-//                        printf("edges #: %d\n", subgraph.getEdgesCount());
+                        printf("edges #: %d\n", subgraph.getEdgesCount());
                     }
-                    if (alloc_type == "fw")
+                    if (alloc_type == "fw"||alloc_type=="fista") 
                         red.stableSetReduction(subgraph, lp, edges, is_stable_set, true);
 
                     if (alloc_type == "greedy")
@@ -226,12 +228,20 @@ int main(int argc, char **argv) {
                         alloc.wCoreApproAllocation(subgraph, w_core, best_pos);
                     if (alloc_type == "fw")
                         alloc.directedCPAllocation(subgraph, lp, iter_num, is_init_lp, ratio, !is_seq, is_exp, is_map);
-
+                    if (alloc_type == "fista")
+                    {
+                        alloc.directedFistaAllocation(subgraph, lp, iter_num, is_init_lp, ratio, !is_seq, is_exp, is_map);
+                    }
                     if (ext_type == "core-appro")
                         ext.directedCoreApproExtraction(graph, subgraph, best_pos);
                     if (ext_type == "cp")
+                    {
                         ext.directedCPExtraction(subgraph, lp, best_pos, vertices, ratio, ratio_o, ratio_p, rho, rho_c,
                                                  is_map);
+                    }
+                    if (ext_type == "frac")
+                        ext.directedFractionalPeelingExtraction(subgraph, lp, best_pos, vertices, ratio, ratio_o, ratio_p, rho, rho_c,
+                                                                is_map);
                     if (ext_type == "greedy")
                         ext.directedBSApproExtraction(graph, is_peeled, vertices);
 
@@ -248,6 +258,18 @@ int main(int argc, char **argv) {
                     break;
                 if (is_stats)
                     total_iter_num += lp.cur_iter_num;
+                double c;
+                if (is_map) {
+                    if (ratio.first < 1 && ratio.second > 1) {
+                        c = 1;
+                    } else if (ratio.second <= 1) {
+                        c = (ratio.first + ratio.second) / 2;
+                    } else if (ratio.first >= 1) {
+                        c = 2 / (1 / ratio.first + 1 / ratio.second);
+                    }
+                } else
+                    c = (ratio.first + ratio.second) / 2;
+                printf("cl: %f, c: %f, cr: %f, rho: %f\n", ratio.first, c, ratio.second, rho);
             }
             printf("ratio count: %d, density: %f, S/T: %d/%d\n", ratio_count, graph.subgraph_density,
                    graph.vertices[0].size(), graph.vertices[1].size());

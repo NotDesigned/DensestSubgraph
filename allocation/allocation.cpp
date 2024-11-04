@@ -345,6 +345,66 @@ Allocation::directedCPAllocation(Graph &graph, LinearProgramming &lp, ui &iter_n
 //    printf("%d\n", lp.cur_iter_num);
 }
 
+void
+Allocation::directedFistaAllocation(Graph &graph, LinearProgramming &lp, ui &iter_num, bool &is_init,
+                                 std::pair<double, double> ratios, bool is_synchronous, bool is_exp, bool is_map) {
+    double ratio;
+    if (is_map) {
+        if (ratios.first < 1 && ratios.second > 1) {
+            ratio = 1;
+        } else if (ratios.second <= 1) {
+            ratio = (ratios.first + ratios.second) / 2;
+        } else if (ratios.first >= 1) {
+            ratio = 2 / (1 / ratios.first + 1 / ratios.second);
+        }
+    } else
+        ratio = (ratios.first + ratios.second) / 2;
+    if (!is_init) {
+        lp.Init(graph, ratio);
+        is_init = true;
+    }
+    double l0=0.1, gamma = 0.95;
+//    for (ui t = T - 100; t < T; t++){
+    ui cur_iter_num = lp.cur_iter_num;
+    double learning_rate= l0 * pow(gamma,cur_iter_num);
+
+    auto indeg = graph.getInDegrees();
+    auto outdeg = graph.getOutDegrees();
+    uint maxindeg = *std::max_element(indeg.begin(), indeg.end());
+    uint maxoutdeg = *std::max_element(outdeg.begin(), outdeg.end());
+    double limit = std::min(0.99 / sqrt (ratio) / maxoutdeg, 0.99 / sqrt(ratio) / maxindeg);
+
+    //printf("limit = %.9lf\n", limit);
+
+    if (is_exp)
+        iter_num = cur_iter_num? cur_iter_num: 1;
+    for (ui t = cur_iter_num; t < cur_iter_num + iter_num; t++) {
+        lp.FistaIterate(learning_rate, t, ratio, is_synchronous);
+        /*
+            if(learning_rate > limit){
+                learning_rate *= gamma; 
+            }
+            else{
+                learning_rate = limit;
+            }
+        */
+        if(learning_rate > 1e-4){
+            learning_rate *= gamma;
+        }
+        else{
+            learning_rate = 1/(1e4+t);
+        }
+
+    }
+    // We want to print the max r in the lp 
+    double mx=0;
+    for(int i = 0; i < graph.getVerticesCount(); i++){
+        mx = std::max(mx, lp.r[0][i]);
+        mx = std::max(mx, lp.r[1][i]);
+    }
+    printf("iter %d max r = %.5lf lr=%.9lf\n", lp.cur_iter_num, mx, learning_rate);
+}
+
 void Allocation::UndirectedflowExactAllocation(Graph &graph, FlowNetwork &flow, double l, double r) {
     ui n = graph.getVerticesCount();
     ui m = graph.getEdgesCount();
@@ -479,6 +539,10 @@ void Allocation::UndirectedGreedyAllocation(Graph &graph){
                 bucket[deg[v]].push_back(v);
             }
         }
+        if(1.0 * num_edge / num_vertex > opt){
+            opt = 1.0 * num_edge / num_vertex;
+            printf("num of vertex = %d\n", num_vertex);
+        }
         opt = std::max(opt, 1.0 * num_edge / num_vertex);
     }
     std::cout<<opt<<std::endl;
@@ -546,6 +610,7 @@ void Allocation::UndirectedCoreAppAllocation(Graph &graph, CoreApp &ca) {
         pos = k;
         if(num_vertex){
             if(k > ca.k){
+                printf("num vertex%d\n", num_vertex);
                 ca.k = k;
                 if(1.0 * num_edge / num_vertex > ca.opt) ca.opt = 1.0 * num_edge / num_vertex;
             }
@@ -610,6 +675,11 @@ void Allocation::UndirectedFlowAppAllocation(Graph &graph){
     }
     double iter = ceil(2*log(m)/eps) + 2;
     double total = dinic.solve(iter);
+    unsigned num = 0;
+    for(ui i = 0; i < dinic.e[T].size(); i++){
+        if(dinic.e[T][i].flow + 0.000005 > mid) num++;
+    }
+    printf("num of vertex = %u\n", num);
     if(total + 0.000005 < m){
         /*
         std::vector<bool> used;

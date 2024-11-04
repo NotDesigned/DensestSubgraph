@@ -22,8 +22,8 @@ include_directories(
         ${PROJECT_SOURCE_DIR}/
 )
 
-#add_executable(DensestSubgraph main.cpp)
-#target_link_libraries(DensestSubgraph utility reduction allocation extraction verification)
+add_executable(DensestSubgraph main.cpp)
+target_link_libraries(DensestSubgraph utility reduction allocation extraction verification)
 if(OpenMP_CXX_FOUND)
     target_link_libraries(DensestSubgraph OpenMP::OpenMP_CXX)
 endif()
