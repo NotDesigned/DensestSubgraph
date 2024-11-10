@@ -18,7 +18,7 @@ public:
     XYCore();
     XYCore& operator=(const XYCore& other);
     void xyCoreInitialization(Graph& graph, bool sort = false);
-    void generateXYCore(const Graph &graph, Graph &subgraph, ui x, ui y, bool is_exact, bool is_map, bool is_copy);
+    void generateXYCore(const Graph &graph, Graph &subgraph, ui x, ui y, bool is_exact, bool is_map, bool is_copy, bool suc_res = false);
 
     ui getDelta(const Graph &graph);
     ui skyline_core_num(Graph &graph, ui cur, ui x, ui y, bool reduced = false);

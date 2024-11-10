@@ -35,8 +35,9 @@ bool RatioSelection::ratioSelection(ui vertices_count, std::pair<double, double>
         if (is_dc) {
             ratio.first = 1.0 / vertices_count;
             ratio.second = vertices_count;
-            ratio.first = std::max(ratio.first, (density / max_degree[0]) * (density / max_degree[0]));
-            ratio.second = std::min(ratio.second, (max_degree[1] / density) * (max_degree[1] / density));
+            // printf("%f, %u, %u\n", density, max_degree[0], max_degree[1]);
+            ratio.first = std::max(ratio.first, (density / 2 / max_degree[0]) * (density / 2 / max_degree[0]));
+            ratio.second = std::min(ratio.second, (2 * max_degree[1] / density) * ( 2 * max_degree[1] / density));
             return true;
         }
     }
@@ -108,8 +109,8 @@ bool RatioSelection::ratioSelection(ui vertices_count, std::pair<double, double>
             dc_ratio_set_.pop();
             ratio.second = dc_ratio_set_.top();
             dc_ratio_set_.pop();
-            ratio.first = std::max(ratio.first, (density / max_degree[0]) * (density / max_degree[0]));
-            ratio.second = std::min(ratio.second, (max_degree[1] / density) * (max_degree[1] / density));
+            ratio.first = std::max(ratio.first, (density / 2 / max_degree[0]) * (density / 2 / max_degree[0]));
+            ratio.second = std::min(ratio.second, (2 * max_degree[1] / density) * (2 * max_degree[1] / density));
             if (ratio.first + 1.0 / vertices_count > ratio.second)
                 continue;
             return true;

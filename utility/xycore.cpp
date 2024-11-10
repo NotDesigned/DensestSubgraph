@@ -32,11 +32,13 @@ void XYCore::xyCoreInitialization(Graph &graph, bool sort) {
     degrees[1] = graph.getInDegrees();
     adj = graph.getAdjList();
     if (sort)
-        for (ui u = 0; u < vertices_count; u++) {
-            std::sort(adj[0][u].begin(), adj[0][u].end(),
-                      [&](const int &a, const int &b) -> bool {
-                          return degrees[1][a] > degrees[1][b];
-                      });
+        for (ui cur = 0; cur < 2; cur++) {
+            for (ui u = 0; u < vertices_count; u++) {
+                std::sort(adj[cur][u].begin(), adj[cur][u].end(),
+                        [&](const int &a, const int &b) -> bool {
+                            return degrees[1 - cur][a] > degrees[1 - cur][b];
+                        });
+            }
         }
     for (int i = 0; i < 2; i++) {
         max_degrees[i] = *std::max_element(degrees[i].begin(), degrees[i].end());
@@ -68,7 +70,7 @@ void XYCore::xyCoreInitialization(Graph &graph, bool sort) {
 }
 
 
-void XYCore::generateXYCore(const Graph &graph, Graph &subgraph, ui x, ui y, bool is_exact, bool is_map, bool is_copy) {
+void XYCore::generateXYCore(const Graph &graph, Graph &subgraph, ui x, ui y, bool is_exact, bool is_map, bool is_copy, bool suc_res) {
     auto n = graph.getVerticesCount();
     if (is_exact) {
         VertexID i = 0, j = 0;

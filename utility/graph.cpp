@@ -154,6 +154,7 @@ void Graph::loadGraphFromFile(const std::string &dir, bool is_sample, double sam
         ui max_in = *std::max_element(deg_[1].begin(), deg_[1].end());
         subgraph_density_upper_bound = std::max(max_out, max_in);
         subgraph_density = sqrt(subgraph_density_upper_bound);
+        // printf("%f, %u, %u\n", subgraph_density, max_out, max_in);
     } else {
         subgraph_density_upper_bound = *std::max_element(deg_[0].begin(), deg_[0].end());
     }

@@ -190,8 +190,8 @@ void LinearProgramming::FistaIterate(double learning_rate, double t, double rati
         double gamma_t = (t - 1) / (t + 2);
         if (is_synchronous){
             for (ui i = 0; i < edges_count_; i++) {
-                if(r[0][beta[i].id_first] < r[1][beta[i].id_second]) beta[i].weight_first += learning_rate;
-                else beta[i].weight_second += learning_rate;
+                beta[i].weight_first = beta[i].weight_first - learning_rate * r[0][beta[i].id_first];
+                beta[i].weight_second = beta[i].weight_second - learning_rate * r[1][beta[i].id_second];
 
                 beta[i].weight_first += learning_rate * ratio;
                 beta[i].weight_second += learning_rate / ratio;
@@ -220,11 +220,13 @@ void LinearProgramming::FistaIterate(double learning_rate, double t, double rati
         }
         else{
             for (ui i = 0; i < edges_count_; i++) {
+                
+                /*
                 if(r[0][beta[i].id_first] < r[1][beta[i].id_second]) beta[i].weight_first += learning_rate;
                 else beta[i].weight_second += learning_rate;
-
-                // beta[i].weight_first = beta[i].weight_first - 2 * sqrt(ratio) * learning_rate * r[0][beta[i].id_first];
-                // beta[i].weight_second = beta[i].weight_second - 2 / sqrt(ratio) * learning_rate * r[1][beta[i].id_second];
+                */
+                beta[i].weight_first = beta[i].weight_first - learning_rate * r[0][beta[i].id_first];
+                beta[i].weight_second = beta[i].weight_second - learning_rate * r[1][beta[i].id_second];
 
                 if (abs(beta[i].weight_first - beta[i].weight_second) < 1) {
                     beta[i].weight_first = (beta[i].weight_first - beta[i].weight_second + 1) / 2;
@@ -248,6 +250,8 @@ void LinearProgramming::FistaIterate(double learning_rate, double t, double rati
             for (ui i = 0; i < edges_count_; i++) {
                 r[0][alpha[i].id_first] += 2 * sqrt(ratio) * beta[i].weight_first;
                 r[1][alpha[i].id_second] += 2 / sqrt(ratio) * beta[i].weight_second;
+                //r[0][alpha[i].id_first] += beta[i].weight_first;
+                //r[1][alpha[i].id_second] += beta[i].weight_second;
             }
         }
     } else {

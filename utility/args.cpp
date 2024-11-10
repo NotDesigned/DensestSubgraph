@@ -24,7 +24,7 @@ Args::Args() {
     args_["-dc"] = "t";
     args_["-ra"] = "f";
     args_["-stable"] = "f";
-    args_["-map"] = "f";
+    args_["-map"] = "t";
     args_["-res"] = "f";
     args_["-width"] = "2";
     args_["-multi"] = "f";
@@ -41,13 +41,14 @@ void Args::argsParse(int argc, char **argv) {
     for (int i = 1; i < argc; i++) {
         if (std::find(options_.begin(), options_.end(), argv[i]) == options_.end()) {
             //error
-            printf("%s", argv[i]);
+            printf("Parsing Error on %s\n", argv[i]);
             exit(-1);
         }
         if (i + 1 > argc) {
             //error
             exit(-1);
         }
+//        printf("%s: %s\n", argv[i], argv[i+1]);
         args_[argv[i]] = argv[i + 1];
         i++;
     }
@@ -56,7 +57,7 @@ void Args::argsParse(int argc, char **argv) {
 std::string Args::getOption(const std::string &option) {
     if (std::find(options_.begin(), options_.end(), option) == options_.end()) {
         //error
-        std::cout << option <<std::endl;
+        std::cout <<"GetOption Error on "<< option <<std::endl;
         exit(-1);
     }
     return args_[option];

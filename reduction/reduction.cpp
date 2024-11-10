@@ -54,6 +54,7 @@ void Reduction::xyCoreReduction(Graph &graph, Graph &x_y_core, std::pair<double,
         xycore.xyCoreInitialization(graph, true);
     }
     ui x, y;
+    bool suc_res = false;
     if (!is_dc) {
         double ratio_sqrt = sqrt(ratios.first / ratios.second);
         x = std::max(static_cast<int>(ceil(l / 2 / ratio_sqrt)), 1);
@@ -80,15 +81,21 @@ void Reduction::xyCoreReduction(Graph &graph, Graph &x_y_core, std::pair<double,
         } else {
             ratio_right_sqrt = sqrt(std::min(ratios.second, ratio * res_width));
             ratio_left_sqrt = sqrt(std::max(ratios.first, ratio / res_width));
+            if (ratio * res_width < ratios.first || ratio / res_width > ratios.second) {
+                suc_res = true;
+            }
         }
         x = std::max(static_cast<int>(ceil(l / 2 / ratio_right_sqrt)), 1);
         y = std::max(static_cast<int>(ceil(ratio_left_sqrt * l / 2)), 1);
-//        printf("x: %d, y: %d\n", x, y);
+        //printf("%f, %f\n", ratios.first, ratios.second);
+        //printf("cl: %f, c: %f, cr: %f\n", std::max(ratios.first, ratio / res_width), ratio, std::min(ratios.second, ratio * res_width));
+        //printf("x: %d, y: %d\n", x, y);
 //        x = std::min(x, xycore.max_degrees[0]);
 //        y = std::min(y, xycore.max_degrees[1]);
     }
-
-    xycore.generateXYCore(graph, x_y_core, x, y, is_exact, is_map, is_copy);
+    // printf("%d, %d\n", x, y);
+    xycore.generateXYCore(graph, x_y_core, x, y, is_exact, is_map, is_copy, suc_res);
+    // printf("#edge %u\n", x_y_core.getEdgesCount());
 }
 void Reduction::stableSetReduction(Graph &graph, LinearProgramming &lp,
                                    std::vector<std::pair<VertexID, VertexID>> &edges, bool stable_set_reduction, bool is_map) {

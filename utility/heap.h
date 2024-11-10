@@ -80,9 +80,14 @@ public:
         return res;
     }
 
-    void modify(ui id){
+    HeapElement top() {
+        if (heap.size() > 1) {
+            return heap[1];
+        }
+    }
+    void modify(ui id, double v = 1){
         ui index = pos[id];
-        heap[index].val--;
+        heap[index].val -= v;
         heapifyUp(index);
     }
 

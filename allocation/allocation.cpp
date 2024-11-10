@@ -363,7 +363,7 @@ Allocation::directedFistaAllocation(Graph &graph, LinearProgramming &lp, ui &ite
         lp.Init(graph, ratio);
         is_init = true;
     }
-    double l0=0.1, gamma = 0.95;
+    double l0=1e-3, gamma = 0.95;
 //    for (ui t = T - 100; t < T; t++){
     ui cur_iter_num = lp.cur_iter_num;
     double learning_rate= l0 * pow(gamma,cur_iter_num);
@@ -372,29 +372,18 @@ Allocation::directedFistaAllocation(Graph &graph, LinearProgramming &lp, ui &ite
     auto outdeg = graph.getOutDegrees();
     uint maxindeg = *std::max_element(indeg.begin(), indeg.end());
     uint maxoutdeg = *std::max_element(outdeg.begin(), outdeg.end());
-    double limit = std::min(0.99 / sqrt (ratio) / maxoutdeg, 0.99 / sqrt(ratio) / maxindeg);
-
-    //printf("limit = %.9lf\n", limit);
+    double limit = 0.99 / (2 * std::max( sqrt (ratio) * maxoutdeg, 1 / sqrt(ratio) * maxindeg));
 
     if (is_exp)
         iter_num = cur_iter_num? cur_iter_num: 1;
     for (ui t = cur_iter_num; t < cur_iter_num + iter_num; t++) {
         lp.FistaIterate(learning_rate, t, ratio, is_synchronous);
-        /*
-            if(learning_rate > limit){
-                learning_rate *= gamma; 
-            }
-            else{
-                learning_rate = limit;
-            }
-        */
-        if(learning_rate > 1e-4){
+        if(learning_rate > limit){
             learning_rate *= gamma;
         }
         else{
-            learning_rate = 1/(1e4+t);
+            learning_rate = limit;
         }
-
     }
     // We want to print the max r in the lp 
     double mx=0;
@@ -402,7 +391,7 @@ Allocation::directedFistaAllocation(Graph &graph, LinearProgramming &lp, ui &ite
         mx = std::max(mx, lp.r[0][i]);
         mx = std::max(mx, lp.r[1][i]);
     }
-    printf("iter %d max r = %.5lf lr=%.9lf\n", lp.cur_iter_num, mx, learning_rate);
+    printf("iter %d max r=%.5lf lr=%.9lf limit=%.9lf\n", lp.cur_iter_num, mx, learning_rate,limit);
 }
 
 void Allocation::UndirectedflowExactAllocation(Graph &graph, FlowNetwork &flow, double l, double r) {

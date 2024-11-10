@@ -28,6 +28,10 @@ public:
                                    std::vector<VertexID> *verticess, double &ratio_o, double &ratio_p);
     void UndirectedflowExactExtraction(Graph &graph, FlowNetwork &flow, double &l, double &r, std::vector<VertexID> *vertices);
     void UndirectedlpExactExtraction(Graph &graph, LinearProgramming &lp, std::vector<VertexID> *vertices);
+    void UndirectedlpFractionalPeeling(Graph &graph, LinearProgramming &lp, std::vector<VertexID> *vertices, ui T);
+    void directedFractionalPeelingExtraction(Graph &graph, LinearProgramming &lp, std::pair<ui, ui> &best_pos,
+                              std::vector<std::vector<VertexID>> &vertices, std::pair<double, double> ratios,
+                              double &ratio_o, double &ratio_p, double &rho, double &rho_c, bool is_map);
 };
 
 #endif //DENSESTSUBGRAPH_EXTRACTION_H

@@ -39,7 +39,7 @@ private:
             "-printc",
             "-sample",
             "-rate",
-            "-coredebug"
+            "-coredebug",
     };
 
 public:

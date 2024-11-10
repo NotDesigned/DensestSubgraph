@@ -133,6 +133,9 @@ int main(int argc, char **argv) {
             RatioSelection ratio_selection(graph);
             bool is_init_ratio = false;
             ui ratio_count = 0;
+
+            double total_xycore_time = 0;
+
             while (ratio_selection.ratioSelection(graph.getVerticesCount(),
                                                   ratio,
                                                   is_init_ratio,
@@ -169,6 +172,7 @@ int main(int argc, char **argv) {
                 while (flag) {
                     if (!is_reduced || (alloc_type != "fw" && alloc_type != "fista")) {
                         is_reduced = true;
+                        auto begin_xycore = std::chrono::steady_clock::now();
                         if (red_type == "exact-xy-core") {
                             red.xyCoreReduction(graph, subgraph, ratio, l, r, is_init_red,
                                                 is_dc, is_map, true, true, is_res, res_width, false);
@@ -208,7 +212,8 @@ int main(int argc, char **argv) {
                             }
                             break;
                         }
-
+                        auto end_xycore = std::chrono::steady_clock::now();
+                        total_xycore_time += std::chrono::duration<double>(end_xycore - begin_xycore).count();
                     }
                     if (is_mul && (alloc_type == "fw"||alloc_type=="fista") && subgraph.subgraph_density < graph.subgraph_density) {
                         subgraph.subgraph_density = graph.subgraph_density;
@@ -270,11 +275,18 @@ int main(int argc, char **argv) {
                 } else
                     c = (ratio.first + ratio.second) / 2;
                 printf("cl: %f, c: %f, cr: %f, rho: %f\n", ratio.first, c, ratio.second, rho);
+                if(is_res){
+                    printf("After res:\ncl: %f, c: %f, cr: %f\n", 
+                        std::max(ratio.first, c / res_width), 
+                        c, 
+                        std::min(ratio.second, c * res_width));
+                }
             }
-            printf("ratio count: %d, density: %f, S/T: %d/%d\n", ratio_count, graph.subgraph_density,
+            printf("ratio count: %d, density: %f, S/T: %lu/%lu\n", ratio_count, graph.subgraph_density,
                    graph.vertices[0].size(), graph.vertices[1].size());
             if (is_stats)
                 printf ("avg vertices #: %f\navg edges #: %f\navg iterations #: %f\n", total_vertices_num / ratio_count, total_edges_num / ratio_count, total_iter_num / ratio_count);
+            printf("xycore time: %f\n", total_xycore_time);
 //            if (is_reduction_ablation)
 //                printf("reduction_ratio: %f\n", reduction_ratio / ratio_count * 100);
         } else {
@@ -508,7 +520,7 @@ int main(int argc, char **argv) {
                     printf("#iter: %d\n", iter_count);
                 }
             }
-            printf("ratio count: %d, density: %f, S/T: %d/%d\n", ratio_count, graph.subgraph_density,
+            printf("ratio count: %d, density: %f, S/T: %lu/%lu\n", ratio_count, graph.subgraph_density,
                    graph.vertices[0].size(), graph.vertices[1].size());
 //            if (is_reduction_ablation)
 //                printf("reduction_ratio: %f\n", reduction_ratio / ratio_count * 100);

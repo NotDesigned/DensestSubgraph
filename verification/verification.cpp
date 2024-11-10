@@ -43,6 +43,8 @@ bool Verification::directedPMApproVerification(std::vector<std::vector<VertexID>
 bool Verification::UndirectedflowExactVerification(Graph &graph, double l, double r) {
     ui n = graph.getVerticesCount();
     double bias = 1.0 / ((double) n * (n - 1));
+    std::cout<<"number of vertices is : "<<graph.vertices[0].size()<<std::endl;
+    std::cout<<r<<" "<<l<<std::endl;
     if (r - l > bias) return true;
     else return false;
 }
@@ -310,6 +312,7 @@ Verification::directedCPVerification(Graph &graph, Graph &subgraph, LinearProgra
         graph.vertices[0] = vertices[0];
         graph.vertices[1] = vertices[1];
     }
+    // printf("%u, %.20f\n", lp.cur_iter_num, rho);
 //    if (!flag) {
 ////        for (ui i = 0; i < 2; i++) {
 ////            for (auto &u: vertices[i])
@@ -353,6 +356,7 @@ bool Verification::directedVWApproVerification(Graph &graph, LinearProgramming &
         graph.vertices[0] = vertices[0];
         graph.vertices[1] = vertices[1];
     }
+    printf("%u, %.20f\n", lp.cur_iter_num, rho);
 
     auto out_degrees = graph.getOutDegrees();
     auto in_degrees = graph.getInDegrees();
@@ -526,6 +530,7 @@ bool Verification::UndirectedlpVerification(Graph &graph, LinearProgramming &lp,
         graph = copy;
     }
     std::cout << " res = " << res << std::endl;
+    std::cout<<"the number of node is: "<<opt_node_count<<std::endl;
     std::cout<<1.0 * opt_edge_count / opt_node_count << std::endl;
     return res > eps;
 }
@@ -573,6 +578,7 @@ bool Verification::UndirectedLpAppVerification(Graph &graph, LinearProgramming &
             pos = i + 1;
         }
     }
+    printf("num of vertex = %d\n", pos);
     double ratio_bound = 0, ratio_real = 0;
     sum = 0, weight_sum = 0;
     for (ui i = 0; i < pos; i++) {
