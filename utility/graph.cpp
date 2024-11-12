@@ -41,6 +41,7 @@ Graph::Graph(bool is_directed, ui n, bool is_weighted) :
     }
 }
 
+// Copy Assignment Operator
 Graph &Graph::operator=(const Graph &other) {
     if (this != &other) {  // Avoid self-assignment
         // Copy data members
@@ -78,6 +79,57 @@ Graph::~Graph() {
     delete[] adj_;
     delete[] deg_;
     delete[] vertices;
+}
+
+// move constructor
+Graph::Graph(Graph&& other) noexcept:
+        is_directed_(other.is_directed_),
+        is_weighted_(other.is_weighted_),
+        vertices_count_(other.vertices_count_),
+        edges_count_(other.edges_count_),
+        subgraph_density(other.subgraph_density),
+        subgraph_density_lower_bound(other.subgraph_density_lower_bound),
+        subgraph_density_upper_bound(other.subgraph_density_upper_bound),
+        weight_(std::move(other.weight_)),
+        map(std::move(other.map)),
+        is_mapped(other.is_mapped) {
+    adj_ = other.adj_;
+    deg_ = other.deg_;
+    vertices = other.vertices;
+    other.adj_ = nullptr;
+    other.deg_ = nullptr;
+    other.vertices = nullptr;
+}
+
+// copy constructor
+Graph::Graph(const Graph& other):
+        is_directed_(other.is_directed_),
+        is_weighted_(other.is_weighted_),
+        vertices_count_(other.vertices_count_),
+        edges_count_(other.edges_count_),
+        subgraph_density(other.subgraph_density),
+        subgraph_density_lower_bound(other.subgraph_density_lower_bound),
+        subgraph_density_upper_bound(other.subgraph_density_upper_bound),
+        weight_(other.weight_),
+        map(other.map),
+        is_mapped(other.is_mapped) {
+    if (is_directed_) {
+        adj_ = new std::vector<std::vector<VertexID>>[2];
+        deg_ = new std::vector<ui>[2];
+        vertices = new std::vector<VertexID>[2];
+        for (int i = 0; i < 2; i++) {
+            adj_[i] = other.adj_[i];
+            deg_[i] = other.deg_[i];
+            vertices[i] = other.vertices[i];
+        }
+    } else {
+        adj_ = new std::vector<std::vector<VertexID>>[1];
+        deg_ = new std::vector<ui>[1];
+        vertices = new std::vector<VertexID>[1];
+        adj_[0] = other.adj_[0];
+        deg_[0] = other.deg_[0];
+        vertices[0] = other.vertices[0];
+    }
 }
 
 void Graph::init() {

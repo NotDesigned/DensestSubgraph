@@ -33,6 +33,8 @@ public:
     explicit Graph(bool is_directed, ui n = 0, bool is_weighted = false);
     Graph& operator=(const Graph& other);
     ~Graph();
+    Graph(Graph&& other) noexcept;
+    Graph(const Graph &other);
 
 public:
     void init();

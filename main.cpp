@@ -166,12 +166,12 @@ int main(int argc, char **argv) {
                 std::vector<std::vector<Heap::handle_type>> handles;
                 std::vector<std::vector<bool>> is_peeled;
                 std::pair<ui, ui> best_pos(0, 0);
-                static Graph subgraph(is_directed, 0);
+                Graph subgraph(is_directed, 0);
                 subgraph.subgraph_density = graph.subgraph_density;
 
-                if (red_type != "appro-xy-core" && red_type != "exact-xy-core"){
-                    subgraph = Graph(is_directed,0);
-                }
+                // if (red_type != "appro-xy-core" && red_type != "exact-xy-core"){
+                //     subgraph = Graph(is_directed,0);
+                // }
 
                 while (flag) {
                     if (!is_reduced || (alloc_type != "fw" && alloc_type != "fista")) {
@@ -387,6 +387,7 @@ int main(int argc, char **argv) {
                 if(ver_type == "cp" && red_type == "stable")
                     flag = ver.UndirectedlpVerification(graph, lp, flow, vertices, true);
             }
+            printf("%.10lf\n",graph.subgraph_density);
         } else {
             //The generation of Ratio set needs to be refined.
             //How to combine divide-and-conquer strategy with our current framework

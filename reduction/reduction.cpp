@@ -46,13 +46,20 @@ void Reduction::coreDecomposition(const Graph &graph) {
     }
 }
 
+void Reduction::InitXYCore(Graph &graph, bool is_exact) {
+    XYCore xycore;
+    xycore.xyCoreInitialization(graph, true, is_exact);
+    Graph xycore_graph = Graph(true, 0);
+    xycore_bases.emplace_back(0,0,xycore,xycore_graph);
+}
+
 void Reduction::xyCoreReduction(Graph &graph, Graph &x_y_core, std::pair<double, double> ratios, double &l, double &r,
                                 bool &is_init, bool is_dc, bool is_divide_by_number, bool is_exact, bool is_map,
                                 bool is_res, ui res_width, bool is_copy) {
-    static int lastx = 1e9, lasty = -1e9;
+    //static int lastx = 1e9, lasty = -1e9;
     if (!is_init) {
         is_init = true;
-        xycore.xyCoreInitialization(graph, true, is_exact);
+        InitXYCore(graph,is_exact);
     }
     ui x, y;
     if (!is_dc) {
@@ -87,52 +94,41 @@ void Reduction::xyCoreReduction(Graph &graph, Graph &x_y_core, std::pair<double,
         //printf("%f, %f\n", ratios.first, ratios.second);
         //printf("cl: %f, c: %f, cr: %f\n", std::max(ratios.first, ratio / res_width), ratio, std::min(ratios.second, ratio * res_width));
         //printf("x: %d, y: %d\n", x, y);
-//        x = std::min(x, xycore.max_degrees[0]);
-//        y = std::min(y, xycore.max_degrees[1]);
+        //x = std::min(x, xycore.max_degrees[0]);
+        //y = std::min(y, xycore.max_degrees[1]);
     }
     // printf("%d, %d\n", x, y);
-    if (lastx <= x && lasty <= y)
-    {
-        static int count = 0;
-        printf("Inherited xycore from previous, %d times\n", ++count);
-        int lastm = x_y_core.getEdgesCount();
-        //printf("Last edge count %d\n", lastm);
-        Graph new_x_y_core = Graph(true, 0);
-        // Use last xycore to initialize, we still need to sort 
-        // because the order of vertices may change due to the fact that subgraph's order may differ from the original graph
-        // actually the change is very small, but we still need to sort
-        xycore_inherit.xyCoreInitialization(x_y_core, true, is_exact);  // sort = true
-        //xycore_inherit.generateXYCore(x_y_core, new_x_y_core, x, y, is_exact, is_map, is_copy);
+    XYCoreBase &xycore_base = NearestXYCore(x, y);
+    int x2 = xycore_base.x, y2 = xycore_base.y;
+    printf("x: %d, y: %d\n", x, y);
+    printf("x2: %d, y2: %d\n", x2, y2);
+    if (x2 != x || y2 != y) {
+        auto xycore_inherit = xycore_base.xycore;
+        auto *lastgraph = &xycore_base.x_y_core;
+        if (x2 == 0 && y2 == 0) {
+            static int count = 0;
+            lastgraph = &graph;
+            printf("Calulate xycore from start, %d times\n", ++count);
+        }
+        else {
+            static int count = 0;
+            printf("Inherit xycore from previous, %d times\n", ++count);
+        }
         if(is_exact){
             Graph xycore_appro = Graph(true,0);
-            xycore_inherit.generateXYCore(x_y_core, xycore_appro, x, y, false, is_map, is_copy);
+            xycore_inherit.generateXYCore(*lastgraph, xycore_appro, x, y, false, is_map, is_copy);
             XYCore xycore_appro_core;
-            xycore_appro_core.xyCoreInitialization(xycore_appro, true, true); // we can reduce this sort, but not implement yet.
-            xycore_appro_core.generateXYCore(xycore_appro, new_x_y_core, x, y, true, is_map, is_copy);
-        }
-        else{
-            xycore_inherit.generateXYCore(x_y_core, new_x_y_core, x, y, false, is_map, is_copy);
-        }
-        x_y_core = new_x_y_core;
-    }
-    else{
-        static int count = 0;
-        printf("Calulate xycore from start, %d times\n", ++count);
-        x_y_core = Graph(true, 0);
-        //xycore.generateXYCore(graph, x_y_core, x, y, is_exact, is_map, is_copy);
-        if(is_exact){
-            Graph xycore_appro = Graph(true,0);
-            xycore.generateXYCore(graph, xycore_appro, x, y, false, is_map, is_copy);
-            XYCore xycore_appro_core;
-            xycore_appro_core.xyCoreInitialization(xycore_appro, true, true);
+            xycore_appro_core.xyCoreInitialization(xycore_appro, true, true); 
             xycore_appro_core.generateXYCore(xycore_appro, x_y_core, x, y, true, is_map, is_copy);
         }
         else{
-            xycore.generateXYCore(graph, x_y_core, x, y, false, is_map, is_copy);
+            xycore_inherit.generateXYCore(*lastgraph, x_y_core, x, y, false, is_map, is_copy);
         }
+        xycore_inherit.xyCoreInitialization(x_y_core, true, is_exact); 
+        xycore_bases.emplace_back(x, y, xycore_inherit, x_y_core);
+    } else {
+        x_y_core = xycore_base.x_y_core;
     }
-    lastx = x;
-    lasty = y;
     // printf("#edge %u\n", x_y_core.getEdgesCount());
 }
 void Reduction::stableSetReduction(Graph &graph, LinearProgramming &lp,
@@ -401,6 +397,7 @@ void Reduction::UndirectedkCoreReduction(Graph &graph, LinearProgramming &lp, bo
             }        
         }
         Graph copy(0, new_vertices_count_);
+        copy.subgraph_density = graph.subgraph_density;
         copy.weight_.resize(new_vertices_count_);
         for(ui i = 0; i < new_vertices_count_; i++) copy.weight_[i] = 1;
         for(ui i = 0; i < vertices_count_; i++){
