@@ -194,7 +194,8 @@ int main(int argc, char **argv) {
                             total_vertices_num += subgraph.getVerticesCount();
                             total_edges_num += subgraph.getEdgesCount();
                         }
-                        printf("subgraph edges: %d\n", subgraph.getEdgesCount());
+                        printf("subgraph edges: %d percent: %.4lf\n", subgraph.getEdgesCount(), 
+                                    subgraph.getEdgesCount() * 1.0 / graph.getEdgesCount());
                         if (subgraph.getEdgesCount() == 0) {
                             double c;
                             if (is_map) {
@@ -279,8 +280,8 @@ int main(int argc, char **argv) {
                 } else
                     c = (ratio.first + ratio.second) / 2;
                 printf("cl: %f, c: %f, cr: %f, rho: %f\n", ratio.first, c, ratio.second, rho);
-                if(is_res){
-                    printf("After res:\ncl: %f, c: %f, cr: %f\n", 
+                if(is_res && is_stats){
+                    printf("restricted: [%.3f,%.3f,%.3f]\n",
                         std::max(ratio.first, c / res_width), 
                         c, 
                         std::min(ratio.second, c * res_width));
@@ -288,8 +289,12 @@ int main(int argc, char **argv) {
             }
             printf("ratio count: %d, density: %f, S/T: %lu/%lu\n", ratio_count, graph.subgraph_density,
                    graph.vertices[0].size(), graph.vertices[1].size());
-            if (is_stats)
+            if (is_stats){
                 printf ("avg vertices #: %f\navg edges #: %f\navg iterations #: %f\n", total_vertices_num / ratio_count, total_edges_num / ratio_count, total_iter_num / ratio_count);
+                printf ("total subgraph percentage:\nvertex #: %.4lf edge #: %.4lf\n",
+                            total_vertices_num * 1.0 / ratio_count / graph.getVerticesCount(), 
+                            total_edges_num * 1.0 / ratio_count / graph.getEdgesCount());
+            }
             printf("xycore time: %f\n", total_xycore_time);
 //            if (is_reduction_ablation)
 //                printf("reduction_ratio: %f\n", reduction_ratio / ratio_count * 100);

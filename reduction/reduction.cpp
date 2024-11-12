@@ -106,6 +106,9 @@ void Reduction::xyCoreReduction(Graph &graph, Graph &x_y_core, std::pair<double,
         if(is_exact){
             Graph xycore_appro = Graph(true,0);
             xycore_inherit.generateXYCore(x_y_core, xycore_appro, x, y, false, is_map, is_copy);
+            if(xycore_appro.getEdgesCount() == 0){
+                return;
+            }
             XYCore xycore_appro_core;
             xycore_appro_core.xyCoreInitialization(xycore_appro, true, true); // we can reduce this sort, but not implement yet.
             xycore_appro_core.generateXYCore(xycore_appro, new_x_y_core, x, y, true, is_map, is_copy);
@@ -122,7 +125,10 @@ void Reduction::xyCoreReduction(Graph &graph, Graph &x_y_core, std::pair<double,
         //xycore.generateXYCore(graph, x_y_core, x, y, is_exact, is_map, is_copy);
         if(is_exact){
             Graph xycore_appro = Graph(true,0);
-            xycore.generateXYCore(graph, xycore_appro, x, y, false, is_map, is_copy);
+            xycore.generateXYCore(graph, xycore_appro, x, y, false, is_map, is_copy);            
+            if(xycore_appro.getEdgesCount() == 0){
+                return;
+            }
             XYCore xycore_appro_core;
             xycore_appro_core.xyCoreInitialization(xycore_appro, true, true);
             xycore_appro_core.generateXYCore(xycore_appro, x_y_core, x, y, true, is_map, is_copy);

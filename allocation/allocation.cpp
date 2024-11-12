@@ -392,7 +392,7 @@ Allocation::directedFistaAllocation(Graph &graph, LinearProgramming &lp, ui &ite
         mx = std::max(mx, lp.r[0][i]);
         mx = std::max(mx, lp.r[1][i]);
     }
-    printf("iter %d max r=%.5lf lr=%.9lf limit=%.9lf\n", lp.cur_iter_num, mx, learning_rate,limit);
+    // printf("iter %d max r=%.5lf lr=%.9lf limit=%.9lf\n", lp.cur_iter_num, mx, learning_rate,limit);
 }
 
 void Allocation::UndirectedflowExactAllocation(Graph &graph, FlowNetwork &flow, double l, double r) {
