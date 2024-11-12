@@ -98,7 +98,10 @@ void Reduction::xyCoreReduction(Graph &graph, Graph &x_y_core, std::pair<double,
         int lastm = x_y_core.getEdgesCount();
         //printf("Last edge count %d\n", lastm);
         Graph new_x_y_core = Graph(true, 0);
-        xycore_inherit.xyCoreInitialization(x_y_core, false, is_exact); // Use last xycore to initialize
+        // Use last xycore to initialize, we still need to sort 
+        // because the order of vertices may change due to the fact that subgraph's order may differ from the original graph
+        // actually the change is very small, but we still need to sort
+        xycore_inherit.xyCoreInitialization(x_y_core, true, is_exact);  // sort = true
         //xycore_inherit.generateXYCore(x_y_core, new_x_y_core, x, y, is_exact, is_map, is_copy);
         if(is_exact){
             Graph xycore_appro = Graph(true,0);
