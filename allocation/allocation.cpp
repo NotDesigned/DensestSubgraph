@@ -373,7 +373,7 @@ Allocation::directedFistaAllocation(Graph &graph, LinearProgramming &lp, ui &ite
     double l0 = std::max(1e-3, limit * 10), gamma = 0.95;
 //    for (ui t = T - 100; t < T; t++){
     ui cur_iter_num = lp.cur_iter_num;
-    double learning_rate= l0 * pow(gamma,cur_iter_num);
+    double learning_rate= l0 * pow(gamma, cur_iter_num);
 
     if (is_exp)
         iter_num = cur_iter_num? cur_iter_num: 1;

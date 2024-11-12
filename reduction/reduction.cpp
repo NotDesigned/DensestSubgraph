@@ -98,15 +98,35 @@ void Reduction::xyCoreReduction(Graph &graph, Graph &x_y_core, std::pair<double,
         int lastm = x_y_core.getEdgesCount();
         //printf("Last edge count %d\n", lastm);
         Graph new_x_y_core = Graph(true, 0);
-        xycore_inherit.xyCoreInitialization(x_y_core, false, is_exact);
-        xycore_inherit.generateXYCore(x_y_core, new_x_y_core, x, y, is_exact, is_map, is_copy);
+        xycore_inherit.xyCoreInitialization(x_y_core, false, is_exact); // Use last xycore to initialize
+        //xycore_inherit.generateXYCore(x_y_core, new_x_y_core, x, y, is_exact, is_map, is_copy);
+        if(is_exact){
+            Graph xycore_appro = Graph(true,0);
+            xycore_inherit.generateXYCore(x_y_core, xycore_appro, x, y, false, is_map, is_copy);
+            XYCore xycore_appro_core;
+            xycore_appro_core.xyCoreInitialization(xycore_appro, true, true); // we can reduce this sort, but not implement yet.
+            xycore_appro_core.generateXYCore(xycore_appro, new_x_y_core, x, y, true, is_map, is_copy);
+        }
+        else{
+            xycore_inherit.generateXYCore(x_y_core, new_x_y_core, x, y, false, is_map, is_copy);
+        }
         x_y_core = new_x_y_core;
     }
     else{
         static int count = 0;
         printf("Calulate xycore from start, %d times\n", ++count);
         x_y_core = Graph(true, 0);
-        xycore.generateXYCore(graph, x_y_core, x, y, is_exact, is_map, is_copy);
+        //xycore.generateXYCore(graph, x_y_core, x, y, is_exact, is_map, is_copy);
+        if(is_exact){
+            Graph xycore_appro = Graph(true,0);
+            xycore.generateXYCore(graph, xycore_appro, x, y, false, is_map, is_copy);
+            XYCore xycore_appro_core;
+            xycore_appro_core.xyCoreInitialization(xycore_appro, true, true);
+            xycore_appro_core.generateXYCore(xycore_appro, x_y_core, x, y, true, is_map, is_copy);
+        }
+        else{
+            xycore.generateXYCore(graph, x_y_core, x, y, false, is_map, is_copy);
+        }
     }
     lastx = x;
     lasty = y;
