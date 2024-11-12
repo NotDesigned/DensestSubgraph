@@ -44,12 +44,16 @@ public:
     XYCoreBase& NearestXYCore(int x2, int y2){// return XYCoreBase with x <= x2 and y <= y2 and minimum edge num 
         XYCoreBase *res = nullptr;
         for(auto &xycore_base: xycore_bases){
+            if(xycore_base.x == 0 && xycore_base.y == 0) continue;
             if(xycore_base.x <= x2 && xycore_base.y <= y2){
                 if(res == nullptr || 
                                 xycore_base.x_y_core.getEdgesCount() 
                                 < res->x_y_core.getEdgesCount())
                     res = &xycore_base;
             }
+        }
+        if(res == nullptr){
+            return xycore_bases[0];
         }
         return *res;
 
