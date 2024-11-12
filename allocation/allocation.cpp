@@ -363,16 +363,17 @@ Allocation::directedFistaAllocation(Graph &graph, LinearProgramming &lp, ui &ite
         lp.Init(graph, ratio);
         is_init = true;
     }
-    double l0=1e-3, gamma = 0.95;
-//    for (ui t = T - 100; t < T; t++){
-    ui cur_iter_num = lp.cur_iter_num;
-    double learning_rate= l0 * pow(gamma,cur_iter_num);
 
     auto indeg = graph.getInDegrees();
     auto outdeg = graph.getOutDegrees();
     uint maxindeg = *std::max_element(indeg.begin(), indeg.end());
     uint maxoutdeg = *std::max_element(outdeg.begin(), outdeg.end());
     double limit = 0.99 / (2 * std::max( sqrt (ratio) * maxoutdeg, 1 / sqrt(ratio) * maxindeg));
+
+    double l0 = std::max(1e-3, limit * 10), gamma = 0.95;
+//    for (ui t = T - 100; t < T; t++){
+    ui cur_iter_num = lp.cur_iter_num;
+    double learning_rate= l0 * pow(gamma,cur_iter_num);
 
     if (is_exp)
         iter_num = cur_iter_num? cur_iter_num: 1;

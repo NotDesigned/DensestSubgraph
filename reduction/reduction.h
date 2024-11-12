@@ -29,7 +29,7 @@ public:
 
 public:
     std::vector<ui> core;
-    XYCore xycore;
+    XYCore xycore,xycore_inherit;
 
 
 private:

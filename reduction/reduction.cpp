@@ -49,12 +49,12 @@ void Reduction::coreDecomposition(const Graph &graph) {
 void Reduction::xyCoreReduction(Graph &graph, Graph &x_y_core, std::pair<double, double> ratios, double &l, double &r,
                                 bool &is_init, bool is_dc, bool is_divide_by_number, bool is_exact, bool is_map,
                                 bool is_res, ui res_width, bool is_copy) {
+    static int lastx = 1e9, lasty = -1e9;
     if (!is_init) {
         is_init = true;
-        xycore.xyCoreInitialization(graph, true);
+        xycore.xyCoreInitialization(graph, true, is_exact);
     }
     ui x, y;
-    bool suc_res = false;
     if (!is_dc) {
         double ratio_sqrt = sqrt(ratios.first / ratios.second);
         x = std::max(static_cast<int>(ceil(l / 2 / ratio_sqrt)), 1);
@@ -81,9 +81,6 @@ void Reduction::xyCoreReduction(Graph &graph, Graph &x_y_core, std::pair<double,
         } else {
             ratio_right_sqrt = sqrt(std::min(ratios.second, ratio * res_width));
             ratio_left_sqrt = sqrt(std::max(ratios.first, ratio / res_width));
-            if (ratio * res_width < ratios.first || ratio / res_width > ratios.second) {
-                suc_res = true;
-            }
         }
         x = std::max(static_cast<int>(ceil(l / 2 / ratio_right_sqrt)), 1);
         y = std::max(static_cast<int>(ceil(ratio_left_sqrt * l / 2)), 1);
@@ -94,7 +91,25 @@ void Reduction::xyCoreReduction(Graph &graph, Graph &x_y_core, std::pair<double,
 //        y = std::min(y, xycore.max_degrees[1]);
     }
     // printf("%d, %d\n", x, y);
-    xycore.generateXYCore(graph, x_y_core, x, y, is_exact, is_map, is_copy, suc_res);
+    if (lastx <= x && lasty <= y)
+    {
+        static int count = 0;
+        printf("Inherited xycore from previous, %d times\n", ++count);
+        int lastm = x_y_core.getEdgesCount();
+        //printf("Last edge count %d\n", lastm);
+        Graph new_x_y_core = Graph(true, 0);
+        xycore_inherit.xyCoreInitialization(x_y_core, false, is_exact);
+        xycore_inherit.generateXYCore(x_y_core, new_x_y_core, x, y, is_exact, is_map, is_copy);
+        x_y_core = new_x_y_core;
+    }
+    else{
+        static int count = 0;
+        printf("Calulate xycore from start, %d times\n", ++count);
+        x_y_core = Graph(true, 0);
+        xycore.generateXYCore(graph, x_y_core, x, y, is_exact, is_map, is_copy);
+    }
+    lastx = x;
+    lasty = y;
     // printf("#edge %u\n", x_y_core.getEdgesCount());
 }
 void Reduction::stableSetReduction(Graph &graph, LinearProgramming &lp,

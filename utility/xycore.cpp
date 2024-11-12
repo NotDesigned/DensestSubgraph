@@ -24,7 +24,7 @@ XYCore &XYCore::operator=(const XYCore &other) {
     return *this;
 };
 
-void XYCore::xyCoreInitialization(Graph &graph, bool sort) {
+void XYCore::xyCoreInitialization(Graph &graph, bool sort, bool is_exact) {
 
 
     auto vertices_count = graph.getVerticesCount();
@@ -32,7 +32,7 @@ void XYCore::xyCoreInitialization(Graph &graph, bool sort) {
     degrees[1] = graph.getInDegrees();
     adj = graph.getAdjList();
     if (sort)
-        for (ui cur = 0; cur < 2; cur++) {
+        for (ui cur = 0; cur < (is_exact? 2:1); cur++) { // Note here we only sort cur = 0 if we are not doing exact xy-core
             for (ui u = 0; u < vertices_count; u++) {
                 std::sort(adj[cur][u].begin(), adj[cur][u].end(),
                         [&](const int &a, const int &b) -> bool {
@@ -70,7 +70,7 @@ void XYCore::xyCoreInitialization(Graph &graph, bool sort) {
 }
 
 
-void XYCore::generateXYCore(const Graph &graph, Graph &subgraph, ui x, ui y, bool is_exact, bool is_map, bool is_copy, bool suc_res) {
+void XYCore::generateXYCore(const Graph &graph, Graph &subgraph, ui x, ui y, bool is_exact, bool is_map, bool is_copy) {
     auto n = graph.getVerticesCount();
     if (is_exact) {
         VertexID i = 0, j = 0;
