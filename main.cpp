@@ -261,7 +261,7 @@ int main(int argc, char **argv) {
                         alloc.directedCPAllocation(subgraph, lp, iter_num, is_init_lp, ratio, !is_seq, is_exp, is_map);
                     if (alloc_type == "fista")
                     {
-                        alloc.directedFistaAllocation(subgraph, lp, iter_num, is_init_lp, ratio, !is_seq, is_exp, is_map, false);
+                        alloc.directedFistaAllocation(subgraph, lp, iter_num, is_init_lp, ratio, !is_seq, is_exp, is_map);
                     }
                     if (ext_type == "core-appro")
                         ext.directedCoreApproExtraction(graph, subgraph, best_pos);
@@ -555,7 +555,7 @@ int main(int argc, char **argv) {
                     if (alloc_type == "fw")
                         alloc.directedCPAllocation(subgraph, lp, iter_num, is_init_lp, ratio, !is_seq, is_exp, is_map);
                     if (alloc_type == "fista")
-                        alloc.directedFistaAllocation(subgraph, lp, iter_num, is_init_lp, ratio, !is_seq, is_exp, is_map, false);
+                        alloc.directedFistaAllocation(subgraph, lp, iter_num, is_init_lp, ratio, !is_seq, is_exp, is_map);
                     if (alloc_type == "flow-exact")
                         alloc.flowExactAllocation(subgraph, flow, ratio, l, r, is_dc, is_map);
 //                    printf("alloc.\n");

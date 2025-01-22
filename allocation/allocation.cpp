@@ -347,9 +347,9 @@ Allocation::directedCPAllocation(Graph &graph, LinearProgramming &lp, ui &iter_n
 
 void
 Allocation::directedFistaAllocation(Graph &graph, LinearProgramming &lp, ui &iter_num, bool &is_init,
-                                 std::pair<double, double> ratios, bool is_synchronous, bool is_exp, bool is_map, bool is_random) {
+                                 std::pair<double, double> ratios, bool is_synchronous, bool is_exp, bool is_divided_by_number) {
     double ratio;
-    if (is_map) {
+    if (is_divided_by_number) {
         if (ratios.first < 1 && ratios.second > 1) {
             ratio = 1;
         } else if (ratios.second <= 1) {
@@ -376,49 +376,15 @@ Allocation::directedFistaAllocation(Graph &graph, LinearProgramming &lp, ui &ite
     ui cur_iter_num = lp.cur_iter_num;
     if (is_exp)
         iter_num = cur_iter_num? cur_iter_num: 1;
-    if(is_random){
-        // init learning rate as 1/m, w=0
-        // In each iteration, we select a set of edges, each edge is selected with probability 1/m
-        // We update the solution according to the selected edges
-        // However we can rewrite it without random selection but use random_shuffle to shuffle the edges
-        // 
-        static std::vector<Alpha> z = lp.alpha;
-        for (ui t = cur_iter_num; t < cur_iter_num + iter_num; t++) {
-            if(t == cur_iter_num && lp.result > lp.last_result){
-                printf("F increase, restart\n");
-                lp.alpha = z;
-                lr = 1.0 / m;
-                // recalculate r 
-                lp.r.assign(2, std::vector<double>(graph.getVerticesCount(), 0));
-                for (ui i = 0; i < m; i++){
-                    lp.r[0][lp.alpha[i].id_first] += 2 * sqrt(ratio) * lp.alpha[i].weight_first;
-                    lp.r[1][lp.alpha[i].id_second] += 2 / sqrt(ratio) * lp.alpha[i].weight_second;
-                }
-                lp.w.assign(m, std::make_pair(0,0));
-            }
-            else {
-                lr *= lr;
-                lr = (std::sqrt(lr*lr+4*lr)-lr)/2;
-            }
-            lp.FistaIterate(lr,t,ratio, is_synchronous, true);
-            //printf("t=%d, lr=%.9lf, result=%.9lf\n", t, lr, lp.result);
+    double l0 = std::max(1e-3, limit * 10), gamma = 0.95;
+    lr= l0 * pow(gamma, cur_iter_num);
+    for (ui t = cur_iter_num; t < cur_iter_num + iter_num; t++) {
+        lp.FistaIterate(lr, t, ratio, is_synchronous, false);
+        if(lr > limit){
+            lr *= gamma;
         }
-        z = lp.alpha;
-        for (ui i = 0; i < m; i++){
-            z[i].weight_first += lr*lr*lp.w[i].first;
-            z[i].weight_second += lr*lr*lp.w[i].second;
-        }
-    }else{
-        double l0 = std::max(1e-3, limit * 10), gamma = 0.95;
-        lr= l0 * pow(gamma, cur_iter_num);
-        for (ui t = cur_iter_num; t < cur_iter_num + iter_num; t++) {
-            lp.FistaIterate(lr, t, ratio, is_synchronous, false);
-            if(lr > limit){
-                lr *= gamma;
-            }
-            else{
-                lr = limit;
-            }
+        else{
+            lr = limit;
         }
     }
     // We want to print the max r in the lp 
