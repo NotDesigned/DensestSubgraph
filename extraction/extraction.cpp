@@ -69,7 +69,6 @@ Extraction::flowExactExtraction(Graph &graph, Graph &subgraph, std::pair<double,
             } else vertices[1].push_back(subgraph.map[v - n - 1]);
         }
     }
-
     if (!vertices[0].empty() && !vertices[1].empty()) {
         l = mid;
         double ratios;

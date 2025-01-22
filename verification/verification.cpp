@@ -103,6 +103,7 @@ Verification::directedCPVerification(Graph &graph, Graph &subgraph, LinearProgra
 
     ui cur = tmp_r[0][0] < tmp_r[1][0] ? 0 : 1;
     bool flag = true;
+    printf("A:%lf B:%lf\n", -tmp_r[cur][0].first, graph.subgraph_density * sqrt(1 + epsilon));
     if (-tmp_r[cur][0].first < graph.subgraph_density * sqrt(1 + epsilon)) {
         double t = -tmp_r[cur][0].first / graph.subgraph_density / sqrt(1 + epsilon);
         ratio_o = (2 * ratio - ratio * t * t - 2 * sqrt(ratio * ratio - ratio * ratio * t * t)) / (t * t);
@@ -270,6 +271,7 @@ Verification::directedCPVerification(Graph &graph, Graph &subgraph, LinearProgra
                 flow.addEdge(map[1][edge.second], map[0][edge.first], 2.0);
             }
             auto max_flow = flow.getMaxFlow(s, t);
+            // printf("max_flow: %f, edges: %d\n", max_flow, edges.size());
             flag = std::abs(max_flow - edges.size()) > 1e-3;
 //        std::vector<bool> is_selected[2];
 //        is_selected[0].resize(n, false);

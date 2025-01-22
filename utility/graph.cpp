@@ -12,6 +12,7 @@
 Graph::Graph(bool is_directed, ui n, bool is_weighted) :
         is_directed_(is_directed),
         is_weighted_(is_weighted),
+        is_mapped(false),
         vertices_count_(n),
         edges_count_(0),
         subgraph_density(0),

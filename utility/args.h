@@ -40,6 +40,7 @@ private:
             "-sample",
             "-rate",
             "-coredebug",
+            "-wshrink", // w-core shrink
     };
 
 public:

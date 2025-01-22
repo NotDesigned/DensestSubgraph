@@ -94,7 +94,7 @@ void Reduction::xyCoreReduction(Graph &graph, Graph &x_y_core, std::pair<double,
     if (lastx <= x && lasty <= y)
     {
         static int count = 0;
-        printf("Inherited xycore from previous, %d times\n", ++count);
+        //printf("Inherited xycore from previous, %d times\n", ++count);
         int lastm = x_y_core.getEdgesCount();
         //printf("Last edge count %d\n", lastm);
         Graph new_x_y_core = Graph(true, 0);
@@ -120,11 +120,11 @@ void Reduction::xyCoreReduction(Graph &graph, Graph &x_y_core, std::pair<double,
     }
     else{
         static int count = 0;
-        printf("Calulate xycore from start, %d times\n", ++count);
+        //printf("Calulate xycore from start, %d times\n", ++count);
         x_y_core = Graph(true, 0);
         //xycore.generateXYCore(graph, x_y_core, x, y, is_exact, is_map, is_copy);
         if(is_exact){
-            Graph xycore_appro = Graph(true,0);
+            Graph xycore_appro = Graph(true, 0);
             xycore.generateXYCore(graph, xycore_appro, x, y, false, is_map, is_copy);            
             if(xycore_appro.getEdgesCount() == 0){
                 return;

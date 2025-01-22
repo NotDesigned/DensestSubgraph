@@ -72,6 +72,7 @@ void XYCore::xyCoreInitialization(Graph &graph, bool sort, bool is_exact) {
 
 void XYCore::generateXYCore(const Graph &graph, Graph &subgraph, ui x, ui y, bool is_exact, bool is_map, bool is_copy) {
     auto n = graph.getVerticesCount();
+    //printf("is_exact: %d, is_map: %d, is_copy: %d\n", is_exact, is_map, is_copy);
     if (is_exact) {
         VertexID i = 0, j = 0;
         while (degrees[0][vert[0][i]] < x || degrees[1][vert[1][j]] < y) {
@@ -145,6 +146,7 @@ void XYCore::generateXYCore(const Graph &graph, Graph &subgraph, ui x, ui y, boo
             subgraph.is_mapped = true;
             subgraph.map = reverse_map;
         }
+
         return;
     } else if (!is_map) {
         if (is_copy) {

@@ -1,4 +1,5 @@
 #include "wcore.h"
+#include <queue>
 
 void WCore::generateMaxWCore(Graph &graph, Graph &subgraph) {
     auto n = graph.getVerticesCount();
@@ -335,3 +336,97 @@ void WCore::getMaxCNPair(Graph &graph, std::pair<ui, ui> &max_core_num_pair) {
 //    printf("x: %d, y: %d\n", max_core_num_pair.first, max_core_num_pair.second);
 }
 
+void WCore::getWCore(Graph &graph, Graph &subgraph, long long w){
+    if (w == 0){
+        subgraph = graph;
+        return;
+    }
+    // Get the w-core of the graph
+    auto n = graph.getVerticesCount();
+    auto adj = graph.getAdjList();
+    std::vector<std::vector<ui>> deg(2);
+    deg[0] = graph.getOutDegrees();
+    deg[1] = graph.getInDegrees();
+    std::queue<VertexID> Q_S, Q_T;
+    std::vector<bool> in_S(n, true);
+    std::vector<bool> in_T(n, true);
+    std::vector<bool> in_Q_S(n, false);
+    std::vector<bool> in_Q_T(n, false);
+    for(VertexID u = 0; u < n; u++){
+        if(deg[0][u]){
+            Q_S.push(u);
+            in_Q_S[u] = true;
+        }
+        if(deg[1][u]){
+            Q_T.push(u);
+            in_Q_T[u] = true;
+        }
+    }
+    while(!Q_S.empty() || !Q_T.empty()){
+        while(!Q_S.empty()){
+            int u=Q_S.front();
+            Q_S.pop();
+            in_Q_S[u] = false;
+            if(!in_S[u])
+                continue;
+            bool valid = false;
+            for(auto &v: adj[0][u]){
+                if(in_T[v] && 1ll * deg[0][u] * deg[1][v] >= w){
+                    valid = true;
+                    break;
+                }
+            }
+            if(!valid){
+                // Remove u from S
+                in_S[u] = false;
+                for(auto &v: adj[0][u]){
+                    if(in_T[v]){
+                        --deg[1][v];
+                        if(!in_Q_T[v]){
+                            in_Q_T[v] = true;
+                            Q_T.push(v);
+                        }
+                    }
+                }
+            }
+        }
+        while(!Q_T.empty()){
+            int v=Q_T.front();
+            Q_T.pop();
+            in_Q_T[v] = false;
+            if(!in_T[v])
+                continue;
+            bool valid = false;
+            for(auto &u: adj[1][v]){
+                if(in_S[u] && 1ll * deg[0][u] * deg[1][v] >= w){
+                    valid = true;
+                    break;
+                }
+            }
+            if(!valid){
+                // Remove v from T
+                in_T[v] = false;
+                for(auto &u: adj[1][v]){
+                    if(in_S[u]){
+                        --deg[0][u];
+                        if(!in_Q_S[u]){
+                            in_Q_S[u] = true;
+                            Q_S.push(u);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    Graph w_core(true, graph.getVerticesCount());
+    for(VertexID u = 0; u < n; u++){
+        if(in_S[u]){
+            for(auto &v: adj[0][u]){
+                if(in_T[v]){
+                    w_core.addDirectedEdge(u, v);
+                }
+            }
+        }
+    }
+    subgraph = w_core;
+}

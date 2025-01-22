@@ -30,6 +30,9 @@ public:
     ui type_;
     ui sort_type;
     ui cur_iter_num;
+    double result, last_result;
+    std::vector<int> perm;
+    std::vector<std::pair<double,double> > w;
 public:
     std::vector<std::vector<double>> r;
     std::vector<Alpha> alpha;
@@ -43,7 +46,7 @@ public:
 
     void Iterate(double learning_rate, double ratio = 0, bool is_synchronous = false);
 
-    void FistaIterate(double learning_rate, double t, double ratio = 0, bool is_synchronous = false);
+    void FistaIterate(double learning_rate, double t, double ratio = 0, bool is_synchronous = false, bool is_random = false);
 
     void MWUIterate(ui t, bool is_synchronous = false);
 

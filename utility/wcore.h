@@ -22,6 +22,7 @@ public:
     void generateMaxWCore(Graph &graph, Graph &subgraph);
     void wCoreDecomposition(Graph &graph);
     void getMaxCNPair(Graph &graph, std::pair<ui, ui> &max_core_num_pair);
+    void getWCore(Graph &graph, Graph &subgraph, long long w);
 };
 
 #endif //DENSESTSUBGRAPH_WCORE_H

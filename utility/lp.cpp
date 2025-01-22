@@ -37,14 +37,15 @@ void LinearProgramming::Init(Graph &graph, double ratio) {
     cur_iter_num = 0;
     weight = graph.weight_;
     if (is_directed_) {
+        last_result = 0;
         ui cnt = 0;
         for (ui i = 0; i < 2; i++)
             r[i].resize(n, 0);
         alpha.resize(m);
         for (VertexID u = 0; u < n; u++) {
             for (auto &v: graph.getOutNeighbors(u)) {
-                alpha[cnt].weight_first += 0.5;
-                alpha[cnt].weight_second += 0.5;
+                alpha[cnt].weight_first = 0.5;
+                alpha[cnt].weight_second = 0.5;
                 alpha[cnt].id_first = u;
                 alpha[cnt].id_second = v;
                 cnt++;
@@ -53,6 +54,20 @@ void LinearProgramming::Init(Graph &graph, double ratio) {
         for (ui u = 0; u < m; u++) {
             r[0][alpha[u].id_first] += 2 * sqrt(ratio) * alpha[u].weight_first;
             r[1][alpha[u].id_second] += 2 / sqrt(ratio) * alpha[u].weight_second;
+        }
+        // calculate initial result
+        // result = 0;
+        // for (ui i = 0; i < m; i++)
+        // {
+        //     result += 1/sqrt(ratio) * r[0][alpha[i].id_first] * r[0][alpha[i].id_first];
+        //     result += sqrt(ratio) * r[1][alpha[i].id_second] * r[1][alpha[i].id_second];
+        // }
+        // result *= 0.25;
+        // printf("Initial result: %f\n", result);
+        w.assign(m, std::make_pair(0, 0));
+        perm.resize(m);
+        for (ui i = 0; i < m; i++) {
+            perm[i] = i;
         }
         if (type_ == 1) {
             beta.resize(m);
@@ -178,80 +193,103 @@ void LinearProgramming::Iterate(double learning_rate, double ratio, bool is_sync
     }
 }
 
-void LinearProgramming::FistaIterate(double learning_rate, double t, double ratio, bool is_synchronous) {
+void LinearProgramming::FistaIterate(double learning_rate, double t, double ratio, 
+bool is_synchronous, bool is_random) {
     if (is_directed_) {
-        //todo
-        //printf("Start Directed Fista\n");
-        //if(is_synchronous)
-        //    printf("Synchronous\n");
+        auto Proj = [](double x,double y) -> std::pair<double,double>{
+            if (fabs(x - y) <= 1) return std::make_pair((x - y + 1) / 2, (y - x + 1) / 2);
+            if (x - y > 0) return std::make_pair(1.0, 0.0);
+            return std::make_pair(0.0, 1.0);
+        };
         ++cur_iter_num;
-        std::vector<Alpha> alpha_new;
-        alpha_new.resize(edges_count_);
-        double gamma_t = (t - 1) / (t + 2);
-        if (is_synchronous){
-            for (ui i = 0; i < edges_count_; i++) {
-                beta[i].weight_first = beta[i].weight_first - learning_rate * r[0][beta[i].id_first];
-                beta[i].weight_second = beta[i].weight_second - learning_rate * r[1][beta[i].id_second];
-
-                beta[i].weight_first += learning_rate * ratio;
-                beta[i].weight_second += learning_rate / ratio;
-
-                if (fabs(beta[i].weight_first - beta[i].weight_second) < 1) {
-                    beta[i].weight_first = (beta[i].weight_first - beta[i].weight_second + 1) / 2;
-                    beta[i].weight_second = 1 - beta[i].weight_first;
-                } else if (beta[i].weight_first - beta[i].weight_second > 0) {
-                    beta[i].weight_first = 1;
-                    beta[i].weight_second = 0;
-                } else {
-                    beta[i].weight_first = 0;
-                    beta[i].weight_second = 1;
-                }
-                
-                r[0][beta[i].id_first] -= 2 * sqrt(ratio) * alpha[i].weight_first;
-                r[1][beta[i].id_second] -= 2 / sqrt(ratio) * alpha[i].weight_second;
-                r[0][beta[i].id_first] += 2 * sqrt(ratio) * beta[i].weight_first;
-                r[1][beta[i].id_second] += 2 / sqrt(ratio) * beta[i].weight_second;
-
-                alpha_new[i] = beta[i];
-                beta[i].weight_first =  alpha_new[i].weight_first + (alpha_new[i].weight_first - alpha[i].weight_first) * gamma_t;
-                beta[i].weight_second = alpha_new[i].weight_second + (alpha_new[i].weight_second - alpha[i].weight_second) * gamma_t;
+        if(is_random){
+            std::shuffle(perm.begin(), perm.end(), std::mt19937(std::random_device()()));
+            if(is_synchronous){
+                throw std::runtime_error("Random FISTA is not supported in synchronous mode");
             }
-            alpha = alpha_new;
+            else{
+                for (auto i:perm) {
+                    int u = alpha[i].id_first, v = alpha[i].id_second;
+                    beta[i].weight_first = learning_rate*learning_rate*w[i].first + alpha[i].weight_first;
+                    beta[i].weight_second = learning_rate*learning_rate*w[i].second + alpha[i].weight_second;
+                    
+                    r[0][u] += 2 * sqrt(ratio) * learning_rate*learning_rate*w[i].first;
+                    r[1][v] += 2 / sqrt(ratio) * learning_rate*learning_rate*w[i].second;
+
+                    double eta = edges_count_ * learning_rate * 2;
+                    auto [w1, w2] = Proj(alpha[i].weight_first-1/(2*eta)*r[0][u], 
+                                        alpha[i].weight_second-1/(2*eta)*r[1][v]); 
+                    w[i].first -= (1-edges_count_*learning_rate)/(learning_rate*learning_rate)
+                    *(w1-alpha[i].weight_first);
+                    w[i].second -= (1-edges_count_*learning_rate)/(learning_rate*learning_rate)
+                    *(w2-alpha[i].weight_second);
+
+                    alpha[i].weight_first = w1;
+                    alpha[i].weight_second = w2;
+                }
+                last_result = result;
+                result = 0;
+                for (ui i = 0; i < nodes_count_; i++)
+                {
+                    result += 1/sqrt(ratio)* r[0][i] * r[0][i];
+                    result += sqrt(ratio)* r[1][i] * r[1][i];
+                }
+                result *= 0.25;
+                r.assign(2, std::vector<double>(nodes_count_, 0));
+                for (ui i = 0; i < edges_count_; i++)
+                {
+                    r[0][alpha[i].id_first] += 2 * sqrt(ratio) * alpha[i].weight_first;
+                    r[1][alpha[i].id_second] += 2 / sqrt(ratio) * alpha[i].weight_second;
+                }
+            }
         }
         else{
-            for (ui i = 0; i < edges_count_; i++) {
-                
-                /*
-                if(r[0][beta[i].id_first] < r[1][beta[i].id_second]) beta[i].weight_first += learning_rate;
-                else beta[i].weight_second += learning_rate;
-                */
-                beta[i].weight_first = beta[i].weight_first - learning_rate * r[0][beta[i].id_first];
-                beta[i].weight_second = beta[i].weight_second - learning_rate * r[1][beta[i].id_second];
+            std::vector<Alpha> alpha_new(edges_count_);
+            double gamma_t = (t - 1) / (t + 2);
+            if (is_synchronous){
+                for (ui i = 0; i < edges_count_; i++) {
+                    beta[i].weight_first = beta[i].weight_first - learning_rate * r[0][beta[i].id_first];
+                    beta[i].weight_second = beta[i].weight_second - learning_rate * r[1][beta[i].id_second];
 
-                if (abs(beta[i].weight_first - beta[i].weight_second) < 1) {
-                    beta[i].weight_first = (beta[i].weight_first - beta[i].weight_second + 1) / 2;
-                    beta[i].weight_second = 1 - beta[i].weight_first;
-                } else if (beta[i].weight_first - beta[i].weight_second > 0) {
-                    beta[i].weight_first = 1;
-                    beta[i].weight_second = 0;
-                } else {
-                    beta[i].weight_first = 0;
-                    beta[i].weight_second = 1;
+                    beta[i].weight_first += learning_rate * ratio;
+                    beta[i].weight_second += learning_rate / ratio;
+
+                    auto [w1, w2] = Proj(beta[i].weight_first, beta[i].weight_second);
+                    beta[i].weight_first = w1;
+                    beta[i].weight_second = w2;
+                    
+                    r[0][beta[i].id_first] -= 2 * sqrt(ratio) * alpha[i].weight_first;
+                    r[1][beta[i].id_second] -= 2 / sqrt(ratio) * alpha[i].weight_second;
+                    r[0][beta[i].id_first] += 2 * sqrt(ratio) * beta[i].weight_first;
+                    r[1][beta[i].id_second] += 2 / sqrt(ratio) * beta[i].weight_second;
+
+                    alpha_new[i] = beta[i];
+                    beta[i].weight_first =  alpha_new[i].weight_first + (alpha_new[i].weight_first - alpha[i].weight_first) * gamma_t;
+                    beta[i].weight_second = alpha_new[i].weight_second + (alpha_new[i].weight_second - alpha[i].weight_second) * gamma_t;
                 }
+                alpha = alpha_new;
             }
-            alpha_new = beta;
-            for (ui i = 0; i < edges_count_; i++) {
-                beta[i].weight_first = alpha_new[i].weight_first + (alpha_new[i].weight_first - alpha[i].weight_first) * gamma_t;
-                beta[i].weight_second = alpha_new[i].weight_second + (alpha_new[i].weight_second - alpha[i].weight_second) * gamma_t;
-            }
-            alpha = alpha_new;
-            r[0].assign(nodes_count_, 0);
-            r[1].assign(nodes_count_, 0);
-            for (ui i = 0; i < edges_count_; i++) {
-                r[0][alpha[i].id_first] += 2 * sqrt(ratio) * beta[i].weight_first;
-                r[1][alpha[i].id_second] += 2 / sqrt(ratio) * beta[i].weight_second;
-                //r[0][alpha[i].id_first] += beta[i].weight_first;
-                //r[1][alpha[i].id_second] += beta[i].weight_second;
+            else{
+                for (ui i = 0; i < edges_count_; i++) {
+                    beta[i].weight_first = beta[i].weight_first - learning_rate * r[0][beta[i].id_first];
+                    beta[i].weight_second = beta[i].weight_second - learning_rate * r[1][beta[i].id_second];
+
+                    auto [w1, w2] = Proj(beta[i].weight_first, beta[i].weight_second);
+                    beta[i].weight_first = w1;
+                    beta[i].weight_second = w2;
+                }
+                alpha_new = beta;
+                for (ui i = 0; i < edges_count_; i++) {
+                    beta[i].weight_first = alpha_new[i].weight_first + (alpha_new[i].weight_first - alpha[i].weight_first) * gamma_t;
+                    beta[i].weight_second = alpha_new[i].weight_second + (alpha_new[i].weight_second - alpha[i].weight_second) * gamma_t;
+                }
+                alpha = alpha_new;
+                r[0].assign(nodes_count_, 0);
+                r[1].assign(nodes_count_, 0);
+                for (ui i = 0; i < edges_count_; i++) {
+                    r[0][alpha[i].id_first] += 2 * sqrt(ratio) * beta[i].weight_first;
+                    r[1][alpha[i].id_second] += 2 / sqrt(ratio) * beta[i].weight_second;
+                }
             }
         }
     } else {

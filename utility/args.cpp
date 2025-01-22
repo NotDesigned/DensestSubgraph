@@ -34,6 +34,7 @@ Args::Args() {
     args_["-rate"] = "1";
     args_["-printc"] = "f";
     args_["-coredebug"] = "f";
+    args_["-wshrink"] = "f";
 }
 
 

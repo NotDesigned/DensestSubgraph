@@ -10,7 +10,7 @@
 #include <cmath>
 
 class Graph {
-private:
+public:
     bool is_directed_;
     bool is_weighted_;
     ui vertices_count_;
