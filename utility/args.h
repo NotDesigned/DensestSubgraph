@@ -41,6 +41,7 @@ private:
             "-rate",
             "-coredebug",
             "-wshrink", // w-core shrink
+            "-initwcore",
     };
 
 public:

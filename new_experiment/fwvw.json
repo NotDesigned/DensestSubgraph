@@ -1,0 +1,28 @@
+{
+    "name" : "fwvw",
+    "common" : [
+        "../DensestSubgraph", 
+        "-t", "d", 
+        "-a", "a",
+        "-vw", "t", 
+        "-dc", "f",
+        "-alloc", "fw",
+        "-ext", "fw", 
+        "-ver", "fw", 
+        "-red", "k-core",
+        "-seq", "t"
+    ],
+    "datasets": [
+        "MO", "TC", "OF", "AD", "AM", "BA", "ML", "MF",
+        "hw", "SK", "Wen", "TW"
+    ],
+    "epss": [
+        0.5,
+        0.1,
+        0.01,
+        0.001,
+        0.0001
+    ],
+    "expiration": 604800,
+    "current_time": "2025-02-10-20-08-28"
+}

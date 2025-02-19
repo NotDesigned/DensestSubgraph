@@ -1,0 +1,23 @@
+{
+    "name" : "DCExact",
+    "common" : [
+        "../DensestSubgraph", 
+        "-t", "d", 
+        "-a", "e", 
+        "-dc", "t",
+        "-alloc", "flow-exact",
+        "-ext", "flow-exact", 
+        "-ver", "flow-exact", 
+        "-red", "appro-xy-core",
+        "-seq", "t"
+    ],
+    "datasets": [
+        "MO", "TC", "OF", "AD", "AM", "BA", "ML", "MF",
+        "hw", "SK", "Wen", "TW"
+    ],
+    "epss": [
+        0
+    ],
+    "expiration": 604800,
+    "current_time": "2025-02-10-20-01-11"
+}

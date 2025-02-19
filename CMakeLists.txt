@@ -2,8 +2,9 @@ cmake_minimum_required(VERSION 3.16)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-#set(CMAKE_CXX_FLAGS "-O3")
-set(CMAKE_CXX_FLAGS "-g")
+set(CMAKE_CXX_FLAGS "-O3")
+#set(CMAKE_CXX_FLAGS "-g -fsanitize=address")
+
 
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wl,--stack,104857600")
@@ -24,7 +25,7 @@ include_directories(
 )
 
 add_executable(DensestSubgraph main.cpp)
-target_link_libraries(DensestSubgraph utility reduction allocation extraction verification)
+target_link_libraries(DensestSubgraph utility reduction allocation extraction verification report)
 if(OpenMP_CXX_FOUND)
     target_link_libraries(DensestSubgraph OpenMP::OpenMP_CXX)
 endif()
@@ -40,3 +41,4 @@ add_subdirectory(reduction)
 add_subdirectory(allocation)
 add_subdirectory(extraction)
 add_subdirectory(verification)
+add_subdirectory(report)

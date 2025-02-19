@@ -103,7 +103,7 @@ Verification::directedCPVerification(Graph &graph, Graph &subgraph, LinearProgra
 
     ui cur = tmp_r[0][0] < tmp_r[1][0] ? 0 : 1;
     bool flag = true;
-    printf("A:%lf B:%lf\n", -tmp_r[cur][0].first, graph.subgraph_density * sqrt(1 + epsilon));
+    // printf("A:%lf B:%lf\n", -tmp_r[cur][0].first, graph.subgraph_density * sqrt(1 + epsilon));
     if (-tmp_r[cur][0].first < graph.subgraph_density * sqrt(1 + epsilon)) {
         double t = -tmp_r[cur][0].first / graph.subgraph_density / sqrt(1 + epsilon);
         ratio_o = (2 * ratio - ratio * t * t - 2 * sqrt(ratio * ratio - ratio * ratio * t * t)) / (t * t);
@@ -580,7 +580,7 @@ bool Verification::UndirectedLpAppVerification(Graph &graph, LinearProgramming &
             pos = i + 1;
         }
     }
-    printf("num of vertex = %d\n", pos);
+    //printf("num of vertex = %d\n", pos);
     double ratio_bound = 0, ratio_real = 0;
     sum = 0, weight_sum = 0;
     for (ui i = 0; i < pos; i++) {

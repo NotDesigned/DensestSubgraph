@@ -142,6 +142,7 @@ void WCore::generateMaxWCore(Graph &graph, Graph &subgraph) {
                 w_core.addDirectedEdge(u, v);
     }
     subgraph = w_core;
+    subgraph.subgraph_density = subgraph.getEdgesCount() * 1.0 / (sqrt(vertices[0].size() * vertices[1].size()));
 //    printf("%d\n", w_core.getEdgesCount());
 }
 

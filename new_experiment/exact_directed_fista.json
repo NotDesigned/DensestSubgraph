@@ -1,0 +1,30 @@
+{
+    "name" : "exact_directed_fista",
+    "common" : [
+        "../DensestSubgraph", 
+        "-t", "d", 
+        "-a", "e",
+        "-red", "appro-xy-core",
+        "-alloc", "fista",
+        "-ext", "cp", 
+        "-ver", "cp", 
+        "-dc", "t",
+        "-exp", "f",
+        "-it", "32", 
+        "-seq", "t",
+        "-map", "t",
+        "-res", "t",
+        "-width", "5",
+        "-stats", "t", 
+        "-wshrink", "t"
+    ],
+    "datasets": [
+        "MO", "TC", "OF", "AD", "AM", "BA", "ML", "MF",
+        "hw", "SK", "Wen", "TW"
+    ],
+    "epss": [
+        0
+    ],
+    "expiration": 1209600,
+    "current_time": "2025-02-09-19-02-12"
+}

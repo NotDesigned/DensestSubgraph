@@ -35,6 +35,7 @@ Args::Args() {
     args_["-printc"] = "f";
     args_["-coredebug"] = "f";
     args_["-wshrink"] = "f";
+    args_["-initwcore"] = "f";
 }
 
 

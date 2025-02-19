@@ -332,6 +332,7 @@ Allocation::directedCPAllocation(Graph &graph, LinearProgramming &lp, ui &iter_n
     if (!is_init) {
         lp.Init(graph, ratio);
         is_init = true;
+        printf("fw init\n");
     }
     double learning_rate;
 //    for (ui t = T - 100; t < T; t++){
@@ -362,7 +363,7 @@ Allocation::directedFistaAllocation(Graph &graph, LinearProgramming &lp, ui &ite
     if (!is_init) {
         lp.Init(graph, ratio);
         is_init = true;
-        printf("fista init\n");
+        //printf("fista init\n");
     }
 
     int m=graph.getEdgesCount();
@@ -371,7 +372,7 @@ Allocation::directedFistaAllocation(Graph &graph, LinearProgramming &lp, ui &ite
     auto outdeg = graph.getOutDegrees();
     uint maxindeg = *std::max_element(indeg.begin(), indeg.end());
     uint maxoutdeg = *std::max_element(outdeg.begin(), outdeg.end());
-    double limit = 0.99 / (2 * std::max( sqrt (ratio) * maxoutdeg, 1 / sqrt(ratio) * maxindeg));
+    double limit = 0.98 / (2 * std::max( sqrt (ratio) * maxoutdeg, 1 / sqrt(ratio) * maxindeg));
 
     ui cur_iter_num = lp.cur_iter_num;
     if (is_exp)
@@ -386,15 +387,12 @@ Allocation::directedFistaAllocation(Graph &graph, LinearProgramming &lp, ui &ite
         else{
             lr = limit;
         }
+        double mx=0;
+        for(int i = 0; i < graph.getVerticesCount(); i++){
+            mx = std::max(mx, std::max(lp.r[0][i],lp.r[1][i]));
+        }
+        //printf("iter %d ratio=%.5lf, max r=%.5lf lr=%.9lf limit=%.9lf\n", lp.cur_iter_num, ratio, mx, lr, limit);
     }
-    // We want to print the max r in the lp 
-    double mx=0;
-    for(int i = 0; i < graph.getVerticesCount(); i++){
-        mx = std::max(mx, lp.r[0][i]);
-        mx = std::max(mx, lp.r[1][i]);
-    }
-    printf("iter %d ratio=%.5lf, max r=%.5lf lr=%.9lf limit=%.9lf\n", lp.cur_iter_num, ratio, 
-        mx, lr, limit);
 }
 
 void Allocation::UndirectedflowExactAllocation(Graph &graph, FlowNetwork &flow, double l, double r) {
@@ -533,7 +531,7 @@ void Allocation::UndirectedGreedyAllocation(Graph &graph){
         }
         if(1.0 * num_edge / num_vertex > opt){
             opt = 1.0 * num_edge / num_vertex;
-            printf("num of vertex = %d\n", num_vertex);
+            //printf("num of vertex = %d\n", num_vertex);
         }
         opt = std::max(opt, 1.0 * num_edge / num_vertex);
     }
@@ -671,7 +669,7 @@ void Allocation::UndirectedFlowAppAllocation(Graph &graph){
     for(ui i = 0; i < dinic.e[T].size(); i++){
         if(dinic.e[T][i].flow + 0.000005 > mid) num++;
     }
-    printf("num of vertex = %u\n", num);
+    //printf("num of vertex = %u\n", num);
     if(total + 0.000005 < m){
         /*
         std::vector<bool> used;

@@ -189,7 +189,7 @@ void Reduction::stableSetReduction(Graph &graph, LinearProgramming &lp,
                 j--;
 //        printf("%d, %d\n", i, j);
             std::swap(lp.alpha[i], lp.alpha[j]);
-
+            std::swap(lp.beta[i], lp.beta[j]);
         }
         std::vector<std::vector<double>> r(2);
         for (i = 0; i < 2; i++) {
@@ -205,10 +205,13 @@ void Reduction::stableSetReduction(Graph &graph, LinearProgramming &lp,
         lp.edges_count_ = edges.size();
         lp.nodes_count_ = vertex_id;
         lp.alpha.resize(lp.edges_count_);
+        lp.beta.resize(lp.edges_count_);
         lp.r = r;
         for (i = 0; i < lp.edges_count_; i++) {
             lp.alpha[i].id_first = map[lp.alpha[i].id_first];
             lp.alpha[i].id_second = map[lp.alpha[i].id_second];
+            lp.beta[i].id_first = map[lp.beta[i].id_first];
+            lp.beta[i].id_second = map[lp.beta[i].id_second];
         }
 //    lp.sort(stable_subgraph);
 //    for (ui i = 0; i < lp.edges_count_; i++) {
@@ -252,11 +255,13 @@ void Reduction::stableSetReduction(Graph &graph, LinearProgramming &lp,
                 j--;
 //        printf("%d, %d\n", i, j);
             std::swap(lp.alpha[i], lp.alpha[j]);
+            std::swap(lp.beta[i], lp.beta[j]);
 
         }
         lp.edges_count_ = edges.size();
 //    lp.nodes_count_ = vertex_id;
         lp.alpha.resize(lp.edges_count_);
+        lp.beta.resize(lp.edges_count_);
 //    lp.r = r;
 
 //    lp.sort(stable_subgraph);
