@@ -13,8 +13,7 @@
         "-seq", "t"
     ],
     "datasets": [
-        "ML", "MO", "TC", "MF", "OF", "AD", "AM", "AR", "BA",
-        "email-EuAll", "wiki-Talk" ,"ew2013", "Wen", "SK", "TW"
+        "MO", "OF", "AD", "AM", "MF"
     ],
     "epss": [
         0.1,
@@ -22,7 +21,7 @@
         0.001,
         0.0001
     ],
-    "expiration": 1800,
-    "multiprocess": 8,
+    "expiration": 1209600,
+    "multiprocess": 16,
     "current_time": "small"
 }

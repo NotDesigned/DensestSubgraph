@@ -348,7 +348,7 @@ Allocation::directedCPAllocation(Graph &graph, LinearProgramming &lp, ui &iter_n
 
 void
 Allocation::directedFistaAllocation(Graph &graph, LinearProgramming &lp, ui &iter_num, bool &is_init,
-                                 std::pair<double, double> ratios, bool is_synchronous, bool is_exp, bool is_divided_by_number) {
+                                 std::pair<double, double> ratios, bool is_synchronous, bool is_exp, bool is_divided_by_number, bool is_adam, bool is_logiter) {
     double ratio;
     if (is_divided_by_number) {
         if (ratios.first < 1 && ratios.second > 1) {
@@ -377,21 +377,47 @@ Allocation::directedFistaAllocation(Graph &graph, LinearProgramming &lp, ui &ite
     ui cur_iter_num = lp.cur_iter_num;
     if (is_exp)
         iter_num = cur_iter_num? cur_iter_num: 1;
-    double l0 = std::max(1e-3, limit * 10), gamma = 0.95;
-    lr= l0 * pow(gamma, cur_iter_num);
-    for (ui t = cur_iter_num; t < cur_iter_num + iter_num; t++) {
-        lp.FistaIterate(lr, t, ratio, is_synchronous, false);
-        if(lr > limit){
-            lr *= gamma;
+    double mx = 0, res = 0;
+    if (!is_adam){
+        double l0 = std::max(1e-3, limit * 10), gamma = 0.95;
+        lr= l0 * pow(gamma, cur_iter_num);
+        for (ui t = cur_iter_num; t < cur_iter_num + iter_num; t++) {
+            lp.FistaIterate(lr, t, ratio, is_synchronous, false);
+            lr = (lr > limit)? lr * gamma: limit;
+            if(is_logiter){
+                mx = 0, res = 0;
+                for(int i = 0; i < graph.getVerticesCount(); i++){
+                    mx = std::max(mx, std::max(lp.r[0][i],lp.r[1][i]));
+                    res += 1.0 / sqrt(ratio) * lp.r[0][i] * lp.r[0][i] + 1.0 * sqrt(ratio) * lp.r[1][i] * lp.r[1][i];
+                }
+                res = res/graph.getVerticesCount();
+                res = sqrt(res);
+                printf("iter %d ratio=%.5lf max r=%.5lf res=%.5lf lr=%.9lf limit=%.9lf\n", lp.cur_iter_num, ratio, mx, res, lr, limit);    
+            }
         }
-        else{
-            lr = limit;
+    }
+    else{
+        double beta1 = 0.9, beta2=0.999, eps = 1e-8, l0 = std::max(1e-3, limit * 10), gamma = 0.95;
+        //lr = l0 * pow(gamma, cur_iter_num);
+        static double mn_mx = std::numeric_limits<double>::max();
+        if(cur_iter_num == 0){
+            //printf("reinit adam\n");
+            lp.Adam.initadam(beta1, beta2, gamma, l0, eps, limit, iter_num, m);
+            mn_mx = std::numeric_limits<double>::max();
         }
-        double mx=0;
-        for(int i = 0; i < graph.getVerticesCount(); i++){
-            mx = std::max(mx, std::max(lp.r[0][i],lp.r[1][i]));
-        }
-        //printf("iter %d ratio=%.5lf, max r=%.5lf lr=%.9lf limit=%.9lf\n", lp.cur_iter_num, ratio, mx, lr, limit);
+        for (ui t = cur_iter_num; t < cur_iter_num + iter_num; t++) {
+            lp.FistaIterate(0, t, ratio, is_synchronous, true);
+            if(is_logiter){
+                mx = 0, res = 0;
+                for(int i = 0; i < graph.getVerticesCount(); i++){
+                    mx = std::max(mx, std::max(lp.r[0][i],lp.r[1][i]));
+                    res += 1.0 / sqrt(ratio) * lp.r[0][i] * lp.r[0][i] + 1.0 * sqrt(ratio) * lp.r[1][i] * lp.r[1][i];
+                }
+                res = res/graph.getVerticesCount();
+                res = sqrt(res);
+                printf("iter %d ratio=%.5lf max r=%.5lf res=%.5lf lr=%.9lf limit=%.9lf\n", lp.cur_iter_num, ratio, mx, res, lp.Adam.alpha, limit);    
+            }
+        } 
     }
 }
 

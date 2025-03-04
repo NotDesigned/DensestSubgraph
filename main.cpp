@@ -34,9 +34,11 @@ int main(int argc, char **argv) {
     bool is_stats = args.getOption("-stats") == "t";
     bool is_sample = args.getOption("-sample") == "t";
     bool is_print_c = args.getOption("-printc") == "t";
-    bool is_debug_core = args.getOption("-coredebug") == "t";
     bool is_wcore_shrink = args.getOption("-wshrink") == "t";
     bool is_init_wcore = args.getOption("-initwcore") == "t";
+    bool is_adam = args.getOption("-adam") == "t";
+    bool is_original = args.getOption("-original") == "t";
+    bool is_log = args.getOption("-log") == "t";
 
     double sample_rate = std::stod(args.getOption("-rate"));
     double epsilon = std::stod(args.getOption("-eps"));
@@ -63,7 +65,7 @@ int main(int argc, char **argv) {
     else graph.loadGraphFromFile(args.getOption("-path"), is_sample, sample_rate);
     graph.removeMultiEdges(graph);
 //    graph.subgraph_density_upper_bound = 1e20;
-    printf("io finished.\n");
+    printf("io finished\nn:%u m:%u\n", graph.getVerticesCount(), graph.getEdgesCount());
     auto begin = std::chrono::steady_clock::now();
     graph.init();
     if(is_sample) graph.sample(sample_rate);
@@ -73,16 +75,32 @@ int main(int argc, char **argv) {
     Verification ver;
     Report rep;
     rep.add_graph_size(graph.getVerticesCount(), graph.getEdgesCount());
-    auto wcore_init_density = [=](Graph &graph){
+    if(iter_num == -1){
+        if(graph.getEdgesCount()<1e7) iter_num = 100;
+        else iter_num = 10;
+        printf("Default iter_num: %u\n", iter_num);
+    }
+    if(!is_original&&graph.getEdgesCount()<1e7){
+        if(is_adam){
+            printf("The graph is too small for adam in appro, set is_adam = false\n");
+            is_adam = false; 
+        }
+        if(is_init_wcore){
+            printf("The graph is too small for w-core init in appro, set is_init_wcore = false\n");
+            is_init_wcore = false;
+        }
+    }
+    auto wcore_init_density = [&rep](Graph &graph){
+        printf("Start w-core initialization\n");
         auto begin_init_wcore = std::chrono::steady_clock::now();
         WCore w_core_;
         Graph tmp(true, 0);
-        w_core_.generateMaxWCore(graph,tmp);
-        assert(tmp.subgraph_density >= graph.subgraph_density);
-        graph.subgraph_density=tmp.subgraph_density;
+        w_core_.generateInitWCore(graph,tmp);
+        graph.subgraph_density=std::max(tmp.subgraph_density,graph.subgraph_density);
         printf("Begin with w-core density %.10lf\n", graph.subgraph_density);
         auto end_init_wcore = std::chrono::steady_clock::now();
         printf("Init w-core time: %f\n", std::chrono::duration<double>(end_init_wcore - begin_init_wcore).count());
+        rep.add_total_wcore_time(std::chrono::duration<double>(end_init_wcore - begin_init_wcore).count());
     };
     if (!is_exact) {
         if (!is_directed) {
@@ -150,8 +168,6 @@ int main(int argc, char **argv) {
             RatioSelection ratio_selection(graph);
             bool is_init_ratio = false;
             ui ratio_count = 0;
-            double total_core_time = 0;
-            double total_wcore_time = 0;
             if(is_init_wcore){
                 wcore_init_density(graph);
             }
@@ -193,28 +209,34 @@ int main(int argc, char **argv) {
                     subgraph = Graph(is_directed,0); // For core inheritance
                 }
 
-                while (flag) {
-                    if (is_wcore_shrink) {
-                        static double last_density = 0;
-                        if (graph.subgraph_density > last_density * 1.25) {
-                            last_density = graph.subgraph_density;
-                            auto begin_wcore = std::chrono::steady_clock::now();
-                            //printf("Enter Wcore, edges #: %d, density %.10lf\n", graph.getEdgesCount(), graph.subgraph_density);
-                            Graph _wcore = Graph(is_directed, 0);
-                            w_core.getWCore(graph, _wcore, ceil(graph.subgraph_density*graph.subgraph_density/4.0));
-                            graph.deg_[0] = _wcore.deg_[0];
-                            graph.deg_[1] = _wcore.deg_[1];
-                            graph.adj_[0] = _wcore.adj_[0];
-                            graph.adj_[1] = _wcore.adj_[1];
-                            graph.edges_count_ = _wcore.edges_count_;
-                            //graph.is_not_wcored = false;
-                            //is_init_red = false;
-                            rep.add_graph_size(graph.getVerticesCount(), graph.getEdgesCount());
-                            //printf("Exit Wcore, edges #: %d\n", graph.getEdgesCount());
-                            auto end_wcore = std::chrono::steady_clock::now();
-                            total_wcore_time += std::chrono::duration<double>(end_wcore - begin_wcore).count();
-                        }
+                if (is_wcore_shrink) {
+                    static double last_density = 0;
+                    if (graph.subgraph_density > last_density * 1.05) {
+                        last_density = graph.subgraph_density;
+                        
+                        auto begin_wcore = std::chrono::steady_clock::now();
+                        if(is_log)
+                            printf("Enter Wcore, edges #: %d, density %.10lf\n", graph.getEdgesCount(), graph.subgraph_density);
+
+                        Graph _wcore = Graph(is_directed, 0);
+                        w_core.getWCore(graph, _wcore, ceil(graph.subgraph_density*graph.subgraph_density/4.0));
+                        graph.deg_[0] = _wcore.deg_[0];
+                        graph.deg_[1] = _wcore.deg_[1];
+                        graph.adj_[0] = _wcore.adj_[0];
+                        graph.adj_[1] = _wcore.adj_[1];
+                        graph.edges_count_ = _wcore.edges_count_;
+                        is_reduced = is_init_red = false;
+                        
+                        auto end_wcore = std::chrono::steady_clock::now();
+                        if(is_log)
+                            printf("Exit Wcore, edges #: %d\n", graph.getEdgesCount());
+
+                        rep.add_graph_size(graph.getVerticesCount(), graph.getEdgesCount()); // Report
+                        rep.add_total_wcore_time(std::chrono::duration<double>(end_wcore - begin_wcore).count());
                     }
+                }
+
+                while (flag) {
                     if (!is_reduced || (alloc_type != "fw" && alloc_type != "fista")) {
                         is_reduced = true;
                         auto begin_core = std::chrono::steady_clock::now();
@@ -229,13 +251,10 @@ int main(int argc, char **argv) {
                         } else {
                             subgraph = graph;
                         }
-//                        if (is_reduction_ablation)
-//                            reduction_ratio += (double) subgraph.getEdgesCount() / graph.getEdgesCount();
                         if (is_stats) {
                             total_vertices_num += subgraph.getVerticesCount();
                             total_edges_num += subgraph.getEdgesCount();
                         }
-                        //printf("subgraph edges: %d/%d = %.4lf\n", subgraph.getEdgesCount(), graph.getEdgesCount(), subgraph.getEdgesCount() * 1.0 / graph.getEdgesCount());
                         if (subgraph.getEdgesCount() == 0) {
                             double c;
                             if (is_map) {
@@ -258,18 +277,19 @@ int main(int argc, char **argv) {
                             break;
                         }
                         auto end_core = std::chrono::steady_clock::now();
-                        total_core_time += std::chrono::duration<double>(end_core - begin_core).count();
+                        rep.add_total_xycore_time(std::chrono::duration<double>(end_core - begin_core).count());
                     }
                     if (is_mul && (alloc_type == "fw"||alloc_type=="fista") && subgraph.subgraph_density < graph.subgraph_density) {
+                        auto begin_red = std::chrono::steady_clock::now();
                         subgraph.subgraph_density = graph.subgraph_density;
-                        //printf("edges #: %d\n", subgraph.getEdgesCount());
                         is_init_red = false;
                         red.xyCoreReduction(subgraph, subgraph, ratio, subgraph.subgraph_density, r, is_init_red, is_dc, is_map, false, false, is_res, res_width, true);
-                        //printf("edges #: %d\n", subgraph.getEdgesCount());
+                        auto end_red = std::chrono::steady_clock::now();
+                        rep.add_total_xycore_time(std::chrono::duration<double>(end_red - begin_red).count());
                     }
                     if (alloc_type == "fw"||alloc_type=="fista") 
                         red.stableSetReduction(subgraph, lp, edges, is_stable_set, true);
-
+                    auto begin_iter = std::chrono::steady_clock::now();
                     if (alloc_type == "greedy")
                         alloc.directedBSApproAllocation(graph, ratio, heap, handles, is_peeled, edges_count, is_init_lp);
                     if (alloc_type == "xy-core-appro")
@@ -280,8 +300,11 @@ int main(int argc, char **argv) {
                         alloc.directedCPAllocation(subgraph, lp, iter_num, is_init_lp, ratio, !is_seq, is_exp, is_map);
                     if (alloc_type == "fista")
                     {
-                        alloc.directedFistaAllocation(subgraph, lp, iter_num, is_init_lp, ratio, !is_seq, is_exp, is_map);
+                        alloc.directedFistaAllocation(subgraph, lp, iter_num, is_init_lp, ratio, !is_seq, is_exp, is_map, is_adam, is_log);
                     }
+                    auto end_iter = std::chrono::steady_clock::now();
+                    rep.add_total_iter_time(std::chrono::duration<double>(end_iter - begin_iter).count());
+
                     if (ext_type == "core-appro")
                         ext.directedCoreApproExtraction(graph, subgraph, best_pos);
                     if (ext_type == "cp")
@@ -295,6 +318,7 @@ int main(int argc, char **argv) {
                     if (ext_type == "greedy")
                         ext.directedBSApproExtraction(graph, is_peeled, vertices);
 
+                    auto begin_ver = std::chrono::steady_clock::now();
                     if (ver_type == "greedy")
                         flag = ver.directedBSApproVerification(graph, edges_count, vertices);
                     if (ver_type == "no")
@@ -303,14 +327,15 @@ int main(int argc, char **argv) {
                         flag = ver.directedCPVerification(graph, subgraph, lp, best_pos, vertices, ratio, rho, rho_c,
                                                           ratio_o, ratio_p, is_stable_set, edges, epsilon, stable,
                                                           is_map);
+                    auto end_ver = std::chrono::steady_clock::now();
+                    rep.add_total_verify_time(std::chrono::duration<double>(end_ver - begin_ver).count());
                 }
                 if (ext_type == "core-appro")
                     break;
-                if (is_stats)
-                {
-                    total_iter_num += lp.cur_iter_num;
-                    rep.add_density(total_iter_num, graph.subgraph_density);
-                }
+
+                total_iter_num += lp.cur_iter_num;
+                rep.add_density(total_iter_num, graph.subgraph_density);
+
                 double c;
                 if (is_map) {
                     if (ratio.first < 1 && ratio.second > 1) {
@@ -330,12 +355,9 @@ int main(int argc, char **argv) {
                 printf ("total subgraph percentage:\nvertex #: %.4lf edge #: %.4lf\n",
                             total_vertices_num * 1.0 / ratio_count / graph.getVerticesCount(), 
                             total_edges_num * 1.0 / ratio_count / graph.getEdgesCount());
-                rep.add_final_density(graph.subgraph_density);
-                rep.add_total_iteration(total_iter_num);
             }
-            printf("core time: %f, wcore time: %f, Iteration: %f\n", total_core_time, total_wcore_time, total_iter_num);
-//            if (is_reduction_ablation)
-//                printf("reduction_ratio: %f\n", reduction_ratio / ratio_count * 100);
+            rep.set_final_density(graph.subgraph_density);
+            rep.set_total_iteration(total_iter_num);
         } else {
             std::pair<double, double> ratio;
             double ratio_o = 0, ratio_p = 0;
@@ -343,6 +365,7 @@ int main(int argc, char **argv) {
             RatioSelection ratio_selection(graph);
             bool is_init_ratio = false;
             ui ratio_count = 0;
+            ui total_iter_num = 0;
             while (ratio_selection.ratioSelection(graph.getVerticesCount(),
                                                   ratio,
                                                   is_init_ratio,
@@ -376,12 +399,13 @@ int main(int argc, char **argv) {
                     flag = ver.UndirectedLpAppVerification(vw_graph, lp, verticess, epsilon);
                     T <<= 1;
                 }
+                total_iter_num += T;
                 ext.directedVWApproExtraction(graph, vw_graph, vertices, verticess, ratio_o, ratio_p);
-                printf("ratio_count: %d, density: %f, S/T: %d / %d\n", ratio_count, graph.subgraph_density, graph.vertices[0].size(), graph.vertices[1].size());
+                printf("ratio_count: %d, density: %f, S/T: %lu / %lu\n", ratio_count, graph.subgraph_density, graph.vertices[0].size(), graph.vertices[1].size());
             }
             printf("%.10lf\n",graph.subgraph_density);
-            rep.add_final_density(graph.subgraph_density);
-            rep.add_total_iteration(0);
+            rep.set_final_density(graph.subgraph_density);
+            rep.set_total_iteration(total_iter_num);
         }
     } else {
 //        Reduction red;
@@ -447,8 +471,6 @@ int main(int argc, char **argv) {
             bool is_init_ratio = false;
             ui ratio_count = 0;
             ui red_count = 0;
-            double total_core_time = 0;
-            double total_wcore_time = 0;
 
             if(is_init_wcore){
                 wcore_init_density(graph);
@@ -489,30 +511,34 @@ int main(int argc, char **argv) {
 
                 if (is_print_c)
                     printf("%f\n", (ratio.first + ratio.second) / 2);
+                if (is_wcore_shrink) {
+                    static double last_density = 0;
+                    if (graph.subgraph_density > last_density * 1.05) {
+                        last_density = graph.subgraph_density;
+                        
+                        auto begin_wcore = std::chrono::steady_clock::now();
+                        if(is_log)
+                            printf("Enter Wcore, edges #: %d, density %.10lf\n", graph.getEdgesCount(), graph.subgraph_density);
+
+                        Graph _wcore = Graph(is_directed, 0);
+                        w_core.getWCore(graph, _wcore, ceil(graph.subgraph_density*graph.subgraph_density/4.0));
+                        graph.deg_[0] = _wcore.deg_[0];
+                        graph.deg_[1] = _wcore.deg_[1];
+                        graph.adj_[0] = _wcore.adj_[0];
+                        graph.adj_[1] = _wcore.adj_[1];
+                        graph.edges_count_ = _wcore.edges_count_;
+                        is_reduced = is_init_red = false;
+                        
+                        auto end_wcore = std::chrono::steady_clock::now();
+                        if(is_log)
+                            printf("Exit Wcore, edges #: %d\n", graph.getEdgesCount());
+
+                        rep.add_graph_size(graph.getVerticesCount(), graph.getEdgesCount()); // Report
+                        rep.add_total_wcore_time(std::chrono::duration<double>(end_wcore - begin_wcore).count());
+                    }
+                }
                 while (flag) {
                     iter_count++;
-                    //printf("%lf\n", graph.subgraph_density);
-                    if (is_wcore_shrink) {
-                        static double last_density = 0;
-                        if (graph.subgraph_density > last_density * 1.25) {
-                            last_density = graph.subgraph_density;
-                            auto begin_wcore = std::chrono::steady_clock::now();
-                            //printf("Enter Wcore, edges #: %d, density %.10lf\n", graph.getEdgesCount(), graph.subgraph_density);
-                            Graph _wcore = Graph(is_directed, 0);
-                            w_core.getWCore(graph, _wcore, ceil(graph.subgraph_density*graph.subgraph_density/4.0));
-                            graph.deg_[0] = _wcore.deg_[0];
-                            graph.deg_[1] = _wcore.deg_[1];
-                            graph.adj_[0] = _wcore.adj_[0];
-                            graph.adj_[1] = _wcore.adj_[1];
-                            graph.edges_count_ = _wcore.edges_count_;
-                            is_reduced = is_init_red = false;
-                            //printf("Exit Wcore, edges #: %d\n", graph.getEdgesCount());
-                            rep.add_graph_size(graph.getVerticesCount(), graph.getEdgesCount()); // Report
-                            auto end_wcore = std::chrono::steady_clock::now();
-                            total_wcore_time += std::chrono::duration<double>(end_wcore - begin_wcore).count();
-                        }
-                    }
-//                    if (!is_reduced || alloc_type != "cp") {
                     if (!is_reduced || (alloc_type != "fw" && alloc_type != "fista")) {
                         is_reduced = true;
                         auto begin_core = std::chrono::steady_clock::now();
@@ -531,10 +557,6 @@ int main(int argc, char **argv) {
                             total_vertices_num += subgraph.getVerticesCount();
                             total_edges_num += subgraph.getEdgesCount();
                         }
-                        printf("subgraph edges: %d/%d = %.4lf\n", subgraph.getEdgesCount(), graph.getEdgesCount(),
-                                    subgraph.getEdgesCount() * 1.0 / graph.getEdgesCount());
-                        if (is_debug_core)
-                            printf("#vertices: %d, #edges: %d\n", subgraph.getVerticesCount(), subgraph.getEdgesCount());
                         if (subgraph.getEdgesCount() == 0) {
                             double c;
                             if (is_map) {
@@ -557,63 +579,52 @@ int main(int argc, char **argv) {
                             break;
                         }
                         auto end_core = std::chrono::steady_clock::now();
-                        total_core_time += std::chrono::duration<double>(end_core - begin_core).count();
+                        rep.add_total_xycore_time(std::chrono::duration<double>(end_core - begin_core).count());
                     }
-//                    if (is_mul) {
-//                        printf("%d, %f, %f\n", lp.cur_iter_num, subgraph.subgraph_density, graph.subgraph_density);
-//                    }
                     if (is_mul && (alloc_type == "fw"||alloc_type=="fista") && subgraph.subgraph_density < graph.subgraph_density) {
-//                        printf("edges #: %d\n", subgraph.getEdgesCount());
+                        auto begin_red = std::chrono::steady_clock::now();
                         is_init_red = false;
                         red.xyCoreReduction(subgraph, subgraph, ratio, subgraph.subgraph_density, r, is_init_red, is_dc, is_map, false, false, is_res, res_width, true);
                         subgraph.subgraph_density = graph.subgraph_density;
-//                        printf("edges #: %d\n", subgraph.getEdgesCount());
+                        auto end_red = std::chrono::steady_clock::now();
+                        rep.add_total_xycore_time(std::chrono::duration<double>(end_red - begin_red).count());
                     }
-//                    if (is_stable_set) {
-//                        printf("edges #: %d\n", subgraph.getEdgesCount());
-//                    }
                     if (is_stable_set && (alloc_type == "fw"||alloc_type=="fista") && e_stable) {
                         red.stableSetReduction(subgraph, lp, edges, is_stable_set, true);
-//                        printf("edges #: %d\n", subgraph.getEdgesCount());
                     }
-//                    printf("red\n");
+
+                    auto begin_alloc = std::chrono::steady_clock::now();
                     if (alloc_type == "fw")
                         alloc.directedCPAllocation(subgraph, lp, iter_num, is_init_lp, ratio, !is_seq, is_exp, is_map);
                     if (alloc_type == "fista")
-                        alloc.directedFistaAllocation(subgraph, lp, iter_num, is_init_lp, ratio, !is_seq, is_exp, is_map);
+                        alloc.directedFistaAllocation(subgraph, lp, iter_num, is_init_lp, ratio, !is_seq, is_exp, is_map, is_adam, is_log);
                     if (alloc_type == "flow-exact")
                         alloc.flowExactAllocation(subgraph, flow, ratio, l, r, is_dc, is_map);
-//                    printf("alloc.\n");
+                    auto end_alloc = std::chrono::steady_clock::now();
+                    rep.add_total_iter_time(std::chrono::duration<double>(end_alloc - begin_alloc).count());
+
                     if (ext_type == "cp")
-                        ext.directedCPExtraction(subgraph, lp, best_pos, vertices, ratio, ratio_o, ratio_p, rho, rho_c,
-                                                 is_map);
+                        ext.directedCPExtraction(subgraph, lp, best_pos, vertices, ratio, ratio_o, ratio_p, rho, rho_c, is_map);
                     if (ext_type == "flow-exact")
                         ext.flowExactExtraction(graph, subgraph, ratio, flow, l, r, ratio_o, ratio_p, is_map);
-//                    printf("ext.\n");
+
+                    auto begin_verify = std::chrono::steady_clock::now();
                     if (ver_type == "cp")
-                        flag = ver.directedCPVerification(graph, subgraph, lp, best_pos, vertices, ratio, rho, rho_c,
-                                                          ratio_o, ratio_p, is_stable_set, edges, 0, false, is_map);
+                        flag = ver.directedCPVerification(graph, subgraph, lp, best_pos, vertices, ratio, rho, rho_c, ratio_o, ratio_p, is_stable_set, edges, 0, false, is_map);
                     if (ver_type == "flow-exact")
                         flag = ver.flowExactVerification(graph, l, r);
-//                    printf("ver.\n");
+                    auto end_verify = std::chrono::steady_clock::now();
+                    rep.add_total_verify_time(std::chrono::duration<double>(end_verify - begin_verify).count());
                 }
-//                printf("ratio_count %d, iter num: %d, ratio (%f, %f), density %f, S/T %d/%d\n", ratio_count, lp.cur_iter_num, ratio.first, ratio.second, graph.subgraph_density, graph.vertices[0].size(), graph.vertices[1].size());
-                if (is_stats) {
-                    if (alloc_type == "fw" || alloc_type == "fista")
-                        total_iter_num += lp.cur_iter_num;
-                    else
-                        total_iter_num += iter_count;
-                    rep.add_density(total_iter_num, graph.subgraph_density);
-                }
-                if (is_debug_core) {
-//                    total_iter_num += iter_count;
-                    printf("#iter: %d\n", iter_count);
-                }
+
+                if (alloc_type == "fw" || alloc_type == "fista")
+                    total_iter_num += lp.cur_iter_num;
+                else
+                    total_iter_num += iter_count;
+                rep.add_density(total_iter_num, graph.subgraph_density);
             }
-            printf("ratio count: %d, density: %f, S/T: %lu/%lu\n", ratio_count, graph.subgraph_density,
+            printf("ratio count: %d, density: %.4lf, S/T: %lu/%lu\n", ratio_count, graph.subgraph_density,
                    graph.vertices[0].size(), graph.vertices[1].size());
-//            if (is_reduction_ablation)
-//                printf("reduction_ratio: %f\n", reduction_ratio / ratio_count * 100);
             if (is_stats)
             {
                 printf ("avg vertices #: %f\navg edges #: %f\navg iterations #: %f\n", total_vertices_num / red_count, total_edges_num / red_count, total_iter_num / ratio_count);
@@ -621,16 +632,13 @@ int main(int argc, char **argv) {
                             total_vertices_num * 1.0 / ratio_count / graph.getVerticesCount(), 
                             total_edges_num * 1.0 / ratio_count / graph.getEdgesCount());
             }
-            printf("core time: %f, wcore time: %f, Iteration: %f\n", total_core_time, total_wcore_time, total_iter_num);
-            rep.add_final_density(graph.subgraph_density);
-            rep.add_total_iteration(total_iter_num);
+            rep.set_final_density(graph.subgraph_density);
+            rep.set_total_iteration(total_iter_num);
         }
 
     }
     auto end = std::chrono::steady_clock::now();
-//    delete [] env;
-    printf("time: %f\n", std::chrono::duration<double>(end - begin).count());
-    rep.add_total_run_time(std::chrono::duration<double>(end - begin).count());
+    rep.set_total_run_time(std::chrono::duration<double>(end - begin).count());
     rep.print();
     return 0;
 };

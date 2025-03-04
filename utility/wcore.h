@@ -11,6 +11,7 @@
 #ifndef DENSESTSUBGRAPH_WCORE_H
 #define DENSESTSUBGRAPH_WCORE_H
 
+typedef unsigned long long ull;
 class WCore{
 public:
     ui w;
@@ -20,6 +21,7 @@ public:
     std::vector<ui> degrees[2];
 public:
     void generateMaxWCore(Graph &graph, Graph &subgraph);
+    void generateInitWCore(Graph &graph, Graph &subgraph);
     void wCoreDecomposition(Graph &graph);
     void getMaxCNPair(Graph &graph, std::pair<ui, ui> &max_core_num_pair);
     void getWCore(Graph &graph, Graph &subgraph, long long w);

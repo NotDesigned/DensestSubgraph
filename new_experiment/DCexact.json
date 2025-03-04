@@ -12,8 +12,8 @@
         "-seq", "t"
     ],
     "datasets": [
-        "MO", "TC", "OF", "AD", "AM", "BA", "ML", "MF",
-        "hw", "SK", "Wen", "TW"
+        "ML", "MO", "TC", "MF", "OF", "AD", "AM", "AR", "CP", "BA",
+        "ew2013", "hw", "DL", "Wen", "SK", "TW"
     ],
     "epss": [
         0

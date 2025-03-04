@@ -39,9 +39,11 @@ private:
             "-printc",
             "-sample",
             "-rate",
-            "-coredebug",
             "-wshrink", // w-core shrink
             "-initwcore",
+            "-adam",
+            "-original",
+            "-log",
     };
 
 public:

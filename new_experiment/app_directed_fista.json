@@ -10,25 +10,27 @@
         "-ver", "cp", 
         "-dc", "t",
         "-exp", "f",
-        "-it", "32", 
+        "-it", "10", 
         "-seq", "t",
         "-map", "t",
         "-res", "t",
         "-width", "5",
         "-stats", "t", 
-        "-wshrink", "t"
+        "-wshrink", "t",
+        "-initwcore", "t",
+        "-adam", "t"
     ],
     "datasets": [
-        "MO", "TC", "OF", "AD", "AM", "BA", "ML", "MF",
-        "hw", "SK", "Wen", "TW"
+        "ML", "MO", "TC", "MF", "OF", "AD", "AM", "AR", "BA",
+        "email-EuAll", "wiki-Talk" ,"ew2013", "Wen", "SK", "WL", "PC"
     ],
     "epss": [
-        0.5,
         0.1,
         0.01,
         0.001,
         0.0001
     ],
     "expiration": 1209600,
-    "current_time": "2025-02-09-19-01-29"
+    "current_time": "2025-02-21-17-16-27",
+    "multiprocess": 2
 }

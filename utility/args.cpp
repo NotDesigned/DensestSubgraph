@@ -20,7 +20,7 @@ Args::Args() {
     args_["-gamma"] = "1";
 //    args_["-p"] = "1";
     args_["-exp"] = "t";
-    args_["-it"] = "100";
+    args_["-it"] = "-1";
     args_["-dc"] = "t";
     args_["-ra"] = "f";
     args_["-stable"] = "f";
@@ -33,9 +33,11 @@ Args::Args() {
     args_["-sample"] = "f";
     args_["-rate"] = "1";
     args_["-printc"] = "f";
-    args_["-coredebug"] = "f";
     args_["-wshrink"] = "f";
     args_["-initwcore"] = "f";
+    args_["-adam"] = "f";
+    args_["-original"] = "f";
+    args_["-log"] = "f";
 }
 
 
