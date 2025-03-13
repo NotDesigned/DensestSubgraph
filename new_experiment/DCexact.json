@@ -1,5 +1,4 @@
-{
-    "name" : "DCExact",
+{ "name" : "DCExact",
     "common" : [
         "../DensestSubgraph", 
         "-t", "d", 
@@ -12,12 +11,13 @@
         "-seq", "t"
     ],
     "datasets": [
-        "ML", "MO", "TC", "MF", "OF", "AD", "AM", "AR", "CP", "BA",
-        "ew2013", "hw", "DL", "Wen", "SK", "TW"
+        "ML", "MO", "TC", "MF", "OF", "AD", "AM", "AR", "BA",
+        "email-EuAll", "wiki-Talk" ,"ew2013", "Wen", "SK", "WL", "PC"
     ],
     "epss": [
         0
     ],
-    "expiration": 604800,
-    "current_time": "2025-02-10-20-01-11"
+    "expiration": 259200,
+    "current_time": "2025-02-10-20-01-11",
+    "multiprocess": 3
 }

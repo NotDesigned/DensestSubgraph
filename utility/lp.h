@@ -81,30 +81,16 @@ public:
         {
             ui edges_count = theta.size();
             alpha *= gamma;
-	    //if (alpha < limit) alpha = limit;
-            beta1_t *= beta1;
             beta2_t *= beta2;
             for(ui j = 0; j < edges_count; j++){
                 double _u = theta[j].id_first, _v=theta[j].id_second;
                 double g0 = grad[0][_u],g1 = grad[1][_v];
-                
-                //m[0][j] = beta1 * m[0][j] + (1 - beta1) * g0;
-                //m[1][j] = beta1 * m[1][j] + (1 - beta1) * g1;
-                
                 v[0][j] = beta2 * v[0][j] + (1 - beta2) * g0 * g0;
                 v[1][j] = beta2 * v[1][j] + (1 - beta2) * g1 * g1;
-                //double m_hat0 = m[0][j] / (1 - beta1_t),m_hat1 = m[1][j] / (1 - beta1_t);
                 double v_hat0 = v[0][j] / (1 - beta2_t), v_hat1 = v[1][j] / (1 - beta2_t);
 
-                double minimum0 = g0 * limit, minimum1 = g1 * limit;
-                //theta[j].weight_first -= alpha * g0 / (sqrt(v_hat0) + epsilon);
-                //theta[j].weight_second -= alpha * g1 / (sqrt(v_hat1) + epsilon);
-
-                theta[j].weight_first -= std::max(alpha * g0 / (sqrt(v_hat0) + epsilon), minimum0);
-                theta[j].weight_second -= std::max(alpha * g1 / (sqrt(v_hat1) + epsilon), minimum1);
-
-                //theta[j].weight_first -= std::max(alpha * m_hat0 / (sqrt(v_hat0) + epsilon), minimum0);
-                //theta[j].weight_second -= std::max(alpha * m_hat1 / (sqrt(v_hat1) + epsilon), minimum1);
+                theta[j].weight_first -= std::max(alpha / (sqrt(v_hat0) + epsilon), limit) * g0;
+                theta[j].weight_second -= std::max(alpha / (sqrt(v_hat1) + epsilon), limit) * g1;
 
                 auto [a,b] = Proj(theta[j].weight_first,theta[j].weight_second);
                 theta[j].weight_first = a;

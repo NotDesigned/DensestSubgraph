@@ -80,7 +80,7 @@ int main(int argc, char **argv) {
         else iter_num = 10;
         printf("Default iter_num: %u\n", iter_num);
     }
-    if(!is_original&&graph.getEdgesCount()<1e7){
+    if(!is_exact&&!is_original&&graph.getEdgesCount()<1e7){
         if(is_adam){
             printf("The graph is too small for adam in appro, set is_adam = false\n");
             is_adam = false; 
