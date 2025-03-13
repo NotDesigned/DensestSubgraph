@@ -271,6 +271,8 @@ void WCore::generateInitWCore(Graph &graph, Graph &subgraph) {
 //        }
 
         w = min;
+        if (rcnt++ > 2)
+            break;
 //        printf("w value: %d\n", w);
     }
 //    printf("S: %d, T: %d\n", vertices[0].size(), vertices[1].size());

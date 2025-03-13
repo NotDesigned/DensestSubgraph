@@ -211,7 +211,7 @@ int main(int argc, char **argv) {
 
                 if (is_wcore_shrink) {
                     static double last_density = 0;
-                    if (graph.subgraph_density > last_density * 1.05) {
+                    if (graph.subgraph_density > last_density * 1.25) {
                         last_density = graph.subgraph_density;
                         
                         auto begin_wcore = std::chrono::steady_clock::now();
@@ -513,7 +513,7 @@ int main(int argc, char **argv) {
                     printf("%f\n", (ratio.first + ratio.second) / 2);
                 if (is_wcore_shrink) {
                     static double last_density = 0;
-                    if (graph.subgraph_density > last_density * 1.05) {
+                    if (graph.subgraph_density > last_density * 1.25) {
                         last_density = graph.subgraph_density;
                         
                         auto begin_wcore = std::chrono::steady_clock::now();
@@ -586,6 +586,11 @@ int main(int argc, char **argv) {
                         is_init_red = false;
                         red.xyCoreReduction(subgraph, subgraph, ratio, subgraph.subgraph_density, r, is_init_red, is_dc, is_map, false, false, is_res, res_width, true);
                         subgraph.subgraph_density = graph.subgraph_density;
+                        if(is_stats)
+                        {
+                            printf("subgraph edges: %d/%d = %.4lf\n", subgraph.getEdgesCount(), graph.getEdgesCount(),
+                                        subgraph.getEdgesCount() * 1.0 / graph.getEdgesCount());
+                        }
                         auto end_red = std::chrono::steady_clock::now();
                         rep.add_total_xycore_time(std::chrono::duration<double>(end_red - begin_red).count());
                     }
